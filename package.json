@@ -16,6 +16,7 @@
     "lint": "biome check",
     "format": "biome format --write",
     "type-check": "tsc --noEmit",
+    "depcheck": "depcheck",
     "prepare": "husky"
   },
   "dependencies": {
@@ -35,6 +36,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^5.0.4",
+    "depcheck": "^1.4.7",
     "happy-dom": "^20.0.7",
     "husky": "^9.1.7",
     "jsdom": "^27.0.1",
