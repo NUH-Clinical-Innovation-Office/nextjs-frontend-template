@@ -2,6 +2,58 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### Initial Setup for New Users
+
+After cloning this repository, run:
+
+```bash
+npm install
+```
+
+This will automatically set up Husky git hooks via the `prepare` script.
+
+### Husky Git Hooks
+
+This project uses [Husky](https://typicode.github.io/husky/) to enforce code quality through git hooks:
+
+#### Pre-commit Hook
+- Runs `npm run lint` before each commit
+- Ensures code passes linting checks before allowing commits
+
+#### Commit Message Hook
+- Validates commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format
+- Enforced via [commitlint](https://commitlint.js.org/)
+- Valid commit types:
+  - `feat`: New feature
+  - `fix`: Bug fix
+  - `docs`: Documentation changes
+  - `style`: Code style changes (formatting, etc.)
+  - `refactor`: Code refactoring
+  - `perf`: Performance improvements
+  - `test`: Adding or updating tests
+  - `build`: Build system or dependency changes
+  - `ci`: CI/CD changes
+  - `chore`: Other changes
+  - `revert`: Revert a previous commit
+
+**Example valid commit messages:**
+```bash
+git commit -m "feat: add user authentication"
+git commit -m "fix: resolve navigation bug"
+git commit -m "docs: update readme with setup instructions"
+```
+
+**Testing if Husky is working:**
+```bash
+# This should fail (invalid commit message format)
+git commit --allow-empty -m "invalid message"
+
+# This should pass (valid format)
+git commit --allow-empty -m "test: verify husky setup"
+```
+
+### Development Server
+
 First, run the development server:
 
 ```bash
