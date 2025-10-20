@@ -1,0 +1,17 @@
+{
+  "ignores": [
+    "@biomejs/biome",
+    "@commitlint/cli",
+    "@commitlint/config-conventional",
+    "@commitlint/types",
+    "@tailwindcss/postcss",
+    "@testing-library/jest-dom",
+    "@testing-library/user-event",
+    "@vitejs/plugin-react",
+    "happy-dom",
+    "husky",
+    "jsdom",
+    "tailwindcss"
+  ],
+  "ignore-patterns": ["dist", ".next", "coverage", "node_modules"]
+}
