@@ -34,29 +34,30 @@
         "recommended": true
       },
       "complexity": {
-        "noExcessiveCognitiveComplexity": "warn",
+        "noExcessiveCognitiveComplexity": "error",
         "noForEach": "off",
         "noUselessFragments": "error",
-        "useSimplifiedLogicExpression": "warn"
+        "useSimplifiedLogicExpression": "error"
       },
       "correctness": {
         "noUnusedImports": "error",
         "noUnusedVariables": "error",
-        "useExhaustiveDependencies": "warn",
+        "useExhaustiveDependencies": "error",
         "useHookAtTopLevel": "error"
       },
       "performance": {
-        "noAccumulatingSpread": "warn",
-        "noDelete": "error"
+        "noAccumulatingSpread": "error",
+        "noDelete": "error",
+        "noNamespaceImport": "error"
       },
       "security": {
-        "noDangerouslySetInnerHtml": "warn",
+        "noDangerouslySetInnerHtml": "error",
         "noDangerouslySetInnerHtmlWithChildren": "error"
       },
       "style": {
-        "noNegationElse": "warn",
+        "noNegationElse": "error",
         "noParameterAssign": "error",
-        "useCollapsedElseIf": "warn",
+        "useCollapsedElseIf": "error",
         "useConsistentArrayType": "error",
         "useFilenamingConvention": {
           "level": "error",
@@ -86,10 +87,10 @@
             ]
           }
         },
-        "useTemplate": "warn"
+        "useTemplate": "error"
       },
       "suspicious": {
-        "noArrayIndexKey": "warn",
+        "noArrayIndexKey": "error",
         "noDebugger": "error",
         "noDoubleEquals": "error",
         "noUnknownAtRules": "off",
