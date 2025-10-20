@@ -1,0 +1,12 @@
+apiVersion: v2
+name: nextjs-app
+description: A Helm chart for Next.js application
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - nextjs
+  - frontend
+  - react
+maintainers:
+  - name: YongCheng Low
