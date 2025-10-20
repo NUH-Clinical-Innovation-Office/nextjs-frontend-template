@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
+    "type-check": "tsc --noEmit",
     "prepare": "husky"
   },
   "dependencies": {
