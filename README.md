@@ -17,10 +17,12 @@ This will automatically set up Husky git hooks via the `prepare` script.
 This project uses [Husky](https://typicode.github.io/husky/) to enforce code quality through git hooks:
 
 #### Pre-commit Hook
+
 - Runs `npm run lint` before each commit
 - Ensures code passes linting checks before allowing commits
 
 #### Commit Message Hook
+
 - Validates commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format
 - Enforced via [commitlint](https://commitlint.js.org/)
 - Valid commit types:
@@ -37,6 +39,7 @@ This project uses [Husky](https://typicode.github.io/husky/) to enforce code qua
   - `revert`: Revert a previous commit
 
 **Example valid commit messages:**
+
 ```bash
 git commit -m "feat: add user authentication"
 git commit -m "fix: resolve navigation bug"
@@ -44,6 +47,7 @@ git commit -m "docs: update readme with setup instructions"
 ```
 
 **Testing if Husky is working:**
+
 ```bash
 # This should fail (invalid commit message format)
 git commit --allow-empty -m "invalid message"
@@ -51,6 +55,49 @@ git commit --allow-empty -m "invalid message"
 # This should pass (valid format)
 git commit --allow-empty -m "test: verify husky setup"
 ```
+
+## Security
+
+### Security Headers
+
+This template includes security headers configured in `next.config.ts` to protect against common web vulnerabilities:
+
+**X-Frame-Options: DENY**
+
+- Prevents your site from being embedded in iframes
+- Protects against clickjacking attacks where attackers overlay invisible frames
+
+**X-Content-Type-Options: nosniff**
+
+- Prevents browsers from MIME-sniffing (guessing content types)
+- Forces browsers to respect the declared Content-Type, preventing script execution vulnerabilities
+
+**Referrer-Policy: origin-when-cross-origin**
+
+- Controls what referrer information is sent with requests
+- Sends full URL for same-origin requests, only origin for cross-origin requests
+
+**X-DNS-Prefetch-Control: on**
+
+- Enables DNS prefetching for external resources
+- Improves performance by resolving domain names before users click links
+
+**Permissions-Policy: camera=(), microphone=(), geolocation=()**
+
+- Blocks access to sensitive browser APIs (camera, microphone, location)
+- Prevents malicious scripts from accessing these features
+
+**Content-Security-Policy (CSP)**
+
+- Controls which resources can be loaded and executed
+- `default-src 'self'`: Only load resources from your domain
+- `script-src 'self' 'unsafe-eval' 'unsafe-inline'`: Allows inline scripts (permissive for template)
+- `style-src 'self' 'unsafe-inline'`: Allows inline styles
+- `img-src 'self' data: https:`: Images from your domain, data URIs, or any HTTPS source
+- `font-src 'self' data:`: Fonts from your domain or data URIs
+- `connect-src 'self'`: API calls only to your domain
+
+**Note:** The CSP is intentionally permissive for a template. For production, tighten it by removing `'unsafe-inline'` and `'unsafe-eval'` based on your specific requirements.
 
 ### Development Server
 
