@@ -11,7 +11,8 @@
     "happy-dom",
     "husky",
     "jsdom",
-    "tailwindcss"
+    "tailwindcss",
+    "tw-animate-css"
   ],
   "ignore-patterns": ["dist", ".next", "coverage", "node_modules"]
 }
