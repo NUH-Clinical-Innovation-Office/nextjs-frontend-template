@@ -14,7 +14,7 @@
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
     "lint": "biome check",
-    "format": "biome format --write",
+    "format": "biome check --write",
     "type-check": "tsc --noEmit",
     "depcheck": "depcheck",
     "prepare": "husky"
