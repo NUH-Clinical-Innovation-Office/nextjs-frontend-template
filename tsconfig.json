@@ -3,7 +3,7 @@
     /* Language and Environment */
     "target": "es2024", // Set ECMAScript target version for emitted JavaScript
     "lib": ["dom", "dom.iterable", "esnext"], // Specify library files to include in compilation
-    "jsx": "preserve", // Preserve JSX for Next.js to transform (don't compile to React.createElement)
+    "jsx": "react-jsx", // Use React automatic runtime (no need to import React in JSX files)
     /* Modules */
     "module": "esnext", // Use latest ECMAScript module syntax
     "moduleResolution": "bundler", // Use bundler-style module resolution (supports package.json exports field)
