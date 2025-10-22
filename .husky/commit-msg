@@ -1,1 +1,7 @@
-npx --no -- commitlint --edit $1
+#!/usr/bin/env sh
+
+# Load nvm to make npm available
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+npx --no -- commitlint --edit "$1"

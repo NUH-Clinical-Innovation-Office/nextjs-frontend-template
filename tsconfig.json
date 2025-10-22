@@ -4,7 +4,6 @@
     "target": "es2024", // Set ECMAScript target version for emitted JavaScript
     "lib": ["dom", "dom.iterable", "esnext"], // Specify library files to include in compilation
     "jsx": "preserve", // Preserve JSX for Next.js to transform (don't compile to React.createElement)
-
     /* Modules */
     "module": "esnext", // Use latest ECMAScript module syntax
     "moduleResolution": "bundler", // Use bundler-style module resolution (supports package.json exports field)
@@ -12,19 +11,15 @@
     "paths": {
       "@/*": ["./src/*"] // Path alias mapping for cleaner imports
     },
-
     /* JavaScript Support */
     "allowJs": true, // Allow JavaScript files to be compiled alongside TypeScript
-
     /* Emit */
     "noEmit": true, // Don't emit compiled files (Next.js handles compilation)
     "incremental": true, // Enable incremental compilation for faster rebuilds
     "isolatedModules": true, // Ensure each file can be safely transpiled in isolation (required for bundlers)
-
     /* Interop Constraints */
     "esModuleInterop": true, // Enable interoperability between CommonJS and ES modules
     "skipLibCheck": true, // Skip type checking of declaration files for faster compilation
-
     /* Type Checking - Strict Mode (enabled via "strict": true) */
     "strict": true, // Enable all strict type checking options (includes the 4 below)
     "alwaysStrict": true, // Parse files in ECMAScript strict mode and emit "use strict"
@@ -32,14 +27,12 @@
     "strictNullChecks": true, // Treat null and undefined as distinct types, not assignable to other types
     "strictFunctionTypes": true, // (Included in strict) Check function parameter types contravariantly
     "strictBindCallApply": true, // (Included in strict) Check bind/call/apply method arguments match the function
-
     /* Type Checking - Additional Checks */
     "noImplicitReturns": true, // Error when not all code paths in function return a value
     "noUncheckedIndexedAccess": true, // Add undefined to indexed access types (array[0] becomes T | undefined)
     "allowUnreachableCode": false, // Error on code that can never be executed
     "noUnusedLocals": true, // Error on unused local variables
     "noUnusedParameters": true, // Error on unused function parameters
-
     /* Framework Integration */
     "plugins": [
       {
@@ -47,6 +40,12 @@
       }
     ]
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
   "exclude": ["node_modules"]
 }
