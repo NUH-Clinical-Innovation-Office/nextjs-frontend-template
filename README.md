@@ -4,13 +4,23 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ### Initial Setup for New Users
 
-After cloning this repository, run:
+After cloning this repository:
+
+1. Install dependencies:
 
 ```bash
 npm install
 ```
 
 This will automatically set up Husky git hooks via the `prepare` script.
+
+2. Configure environment variables:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration. See [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) for details.
 
 ### Husky Git Hooks
 
