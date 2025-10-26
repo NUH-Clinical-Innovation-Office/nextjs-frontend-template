@@ -1,12 +1,5 @@
 # Build arguments for versioning and metadata
 ARG NODE_VERSION=24.10.0
-ARG BUILD_DATE
-ARG VCS_REF
-ARG VERSION=0.1.0
-ARG AUTHORS=nuh
-ARG URL=https://github.com/NUH-Clinical-Innovation-Office/nextjs-frontend-template
-ARG TITLE=Next.js Frontend Template
-ARG DESCRIPTION=Production-ready Next.js application
 
 # Stage 1: Builder
 FROM node:${NODE_VERSION}-alpine AS builder
@@ -25,26 +18,25 @@ RUN npm run build
 # Stage 2: Runner
 FROM node:${NODE_VERSION}-alpine AS runner
 
-# Re-declare build args for this stage
+# Metadata arguments
 ARG BUILD_DATE
-ARG VCS_REF
+ARG REVISION
 ARG VERSION
 
 # Add metadata labels to final image
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
-      org.opencontainers.image.authors="YongCheng Low" \
-      org.opencontainers.image.url="${URL}" \
-      org.opencontainers.image.version="${AUTHORS}" \
-      org.opencontainers.image.revision="${VCS_REF}" \
-      org.opencontainers.image.title="${TITLE}" \
-      org.opencontainers.image.description="${DESCRIPTION}" \
+      org.opencontainers.image.authors="nuh" \
+      org.opencontainers.image.url="https://github.com/NUH-Clinical-Innovation-Office/nextjs-frontend-template" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.title="Next.js Frontend Template" \
+      org.opencontainers.image.description="Production-ready Next.js application" \
       org.opencontainers.image.base.name="node:${NODE_VERSION}-alpine"
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV APP_VERSION="${VERSION}"
 
 # Create a non-root user
 RUN addgroup --system --gid 1001 nodejs && \
