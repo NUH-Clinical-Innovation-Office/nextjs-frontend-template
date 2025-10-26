@@ -1,0 +1,62 @@
+# Production environment values
+replicaCount: 2
+
+image:
+  repository: nextjs-frontend-template
+  pullPolicy: Always
+  tag: "latest"
+
+serviceAccount:
+  create: true
+  annotations:
+    # Required for Vault integration
+  name: "nextjs-frontend-template"
+
+# Vault Agent Injector annotations
+podAnnotations:
+  vault.hashicorp.io/agent-inject: "true"
+  vault.hashicorp.io/role: "nextjs-frontend-template"
+  vault.hashicorp.io/agent-inject-secret-env: "secret/data/nextjs-frontend-template/production"
+  vault.hashicorp.io/agent-inject-template-env: |
+    {{- with secret "secret/data/nextjs-frontend-template/production" -}}
+    export NEXTAUTH_URL="{{ .Data.data.NEXTAUTH_URL }}"
+    export NEXTAUTH_SECRET="{{ .Data.data.NEXTAUTH_SECRET }}"
+    export DATABASE_URL="{{ .Data.data.DATABASE_URL }}"
+    export API_URL="{{ .Data.data.API_URL }}"
+    {{- end -}}
+
+env:
+  - name: NODE_ENV
+    value: "production"
+  - name: NEXT_PUBLIC_ENV
+    value: "production"
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+  hosts:
+    - host: frontend-template-cio.yongchenglow.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: nextjs-app-prod-tls
+      hosts:
+        - frontend-template-cio.yongchenglow.com
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
