@@ -1,5 +1,5 @@
 # Build arguments for versioning and metadata
-ARG NODE_VERSION=24.12.0
+ARG NODE_VERSION=24.10.0
 ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION=0.1.0
