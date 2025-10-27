@@ -200,11 +200,56 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
-  deploy:
-    name: Deploy to Kubernetes
+  deploy-staging:
+    name: Deploy to Staging
     runs-on: ubuntu-latest
     needs: docker
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.13.0"
+
+      - name: Setup Kubernetes config
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Extract image tag
+        id: image-tag
+        run: |
+          echo "TAG=main-${{ github.sha }}" >> $GITHUB_OUTPUT
+
+      - name: Deploy with Helm
+        run: |
+          IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
+          helm upgrade --install nextjs-app-staging ./helm/nextjs-app \
+            -n nextjs-frontend-template-staging \
+            --create-namespace \
+            -f ./helm/nextjs-app/values-staging.yaml \
+            --set image.tag=${{ steps.image-tag.outputs.TAG }} \
+            --set image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER} \
+            --wait \
+            --timeout 5m
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/nextjs-app -n nextjs-frontend-template-staging --timeout=5m
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment:
+      name: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
