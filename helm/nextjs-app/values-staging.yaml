@@ -6,8 +6,10 @@ image:
   pullPolicy: IfNotPresent
   tag: "staging"
 
-imagePullSecrets:
-  - name: ghcr-secret
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 30002
 
 serviceAccount:
   create: true

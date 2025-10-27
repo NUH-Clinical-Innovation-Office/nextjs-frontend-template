@@ -6,7 +6,9 @@ image:
   pullPolicy: IfNotPresent
   tag: "latest"
 
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-secret
+
 nameOverride: ""
 fullnameOverride: ""
 
@@ -33,7 +35,6 @@ service:
   type: NodePort
   port: 3000
   targetPort: 3000
-  nodePort: 30001
 
 ingress:
   enabled: false

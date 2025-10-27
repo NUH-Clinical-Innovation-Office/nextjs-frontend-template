@@ -6,8 +6,10 @@ image:
   pullPolicy: IfNotPresent
   tag: "dev"
 
-imagePullSecrets:
-  - name: ghcr-secret
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 30003
 
 serviceAccount:
   create: true

@@ -6,8 +6,10 @@ image:
   pullPolicy: Always
   tag: "latest"
 
-imagePullSecrets:
-  - name: ghcr-secret
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 30001
 
 serviceAccount:
   create: true
