@@ -6,6 +6,9 @@ image:
   pullPolicy: IfNotPresent
   tag: "staging"
 
+imagePullSecrets:
+  - name: ghcr-secret
+
 serviceAccount:
   create: true
   annotations:

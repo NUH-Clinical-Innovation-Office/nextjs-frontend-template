@@ -165,14 +165,18 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Convert image name to lowercase
+        id: image-name
+        run: echo "IMAGE_NAME_LOWER=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.IMAGE_NAME_LOWER }}
           tags: |
             type=ref,event=branch
-            type=sha,prefix={{branch}}-
+            type=sha,prefix={{branch}}-,format=long
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Extract version from package.json
@@ -194,7 +198,7 @@ jobs:
             VERSION=${{ steps.package-version.outputs.VERSION }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
 
   deploy:
     name: Deploy to Kubernetes
@@ -208,7 +212,7 @@ jobs:
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
-          version: 'v3.13.0'
+          version: "v3.13.0"
 
       - name: Setup Kubernetes config
         env:
@@ -225,13 +229,16 @@ jobs:
 
       - name: Deploy with Helm
         run: |
+          IMAGE_NAME_LOWER=$(echo "${{ env.IMAGE_NAME }}" | tr '[:upper:]' '[:lower:]')
           helm upgrade --install nextjs-app ./helm/nextjs-app \
+            -n nextjs-frontend-template \
+            --create-namespace \
             -f ./helm/nextjs-app/values-production.yaml \
             --set image.tag=${{ steps.image-tag.outputs.TAG }} \
-            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --set image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER} \
             --wait \
             --timeout 5m
 
       - name: Verify deployment
         run: |
-          kubectl rollout status deployment/nextjs-app -n default --timeout=5m
+          kubectl rollout status deployment/nextjs-app -n nextjs-frontend-template --timeout=5m
