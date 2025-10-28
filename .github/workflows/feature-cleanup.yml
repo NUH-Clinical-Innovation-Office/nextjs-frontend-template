@@ -1,8 +1,6 @@
 name: Feature Branch Cleanup
 
 on:
-  pull_request:
-    types: [closed]
   delete:
 
 env:
@@ -12,7 +10,6 @@ jobs:
   cleanup:
     name: Cleanup Feature Branch Deployment
     runs-on: ubuntu-latest
-    if: github.event_name == 'delete' || github.event.pull_request.merged == true
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -155,14 +152,3 @@ jobs:
             echo "⚠ Orphaned route: $FULL_HOSTNAME"
           fi
 
-      - name: Comment on PR
-        if: github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `🧹 Feature branch deployment cleaned up!\n\n**Branch:** ${{ steps.branch-name.outputs.SANITIZED }}\n**Port freed:** ${{ steps.get-port.outputs.PORT }}\n**Namespace deleted:** nextjs-${{ steps.branch-name.outputs.SANITIZED }}`
-            })
