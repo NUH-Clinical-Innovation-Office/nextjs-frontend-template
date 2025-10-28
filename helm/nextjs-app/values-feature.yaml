@@ -1,0 +1,53 @@
+# Feature branch environment values (template)
+replicaCount: 1
+
+image:
+  repository: nextjs-frontend-template
+  pullPolicy: IfNotPresent
+  tag: "feature"
+
+service:
+  type: NodePort
+  port: 3000
+  nodePort: 30000  # Will be overridden by CI
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "nextjs-frontend-template-feature"
+
+podAnnotations:
+  vault.hashicorp.io/agent-inject: "true"
+  vault.hashicorp.io/role: "nextjs-frontend-template"
+  vault.hashicorp.io/agent-inject-secret-env: "secret/data/nextjs-frontend-template/development"
+  vault.hashicorp.io/agent-inject-template-env: |
+    {{- with secret "secret/data/nextjs-frontend-template/development" -}}
+    export NEXTAUTH_URL="{{ .Data.data.NEXTAUTH_URL }}"
+    export NEXTAUTH_SECRET="{{ .Data.data.NEXTAUTH_SECRET }}"
+    export DATABASE_URL="{{ .Data.data.DATABASE_URL }}"
+    export API_URL="{{ .Data.data.API_URL }}"
+    {{- end -}}
+
+env:
+  - name: NODE_ENV
+    value: "production"
+  - name: NEXT_PUBLIC_ENV
+    value: "development"
+
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+ingress:
+  enabled: false
+
+autoscaling:
+  enabled: false
+
+featureBranch:
+  enabled: true
+  portMappingNamespace: "default"
