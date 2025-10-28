@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -19,7 +19,6 @@ jobs:
   docker:
     name: Build & Push Docker Image
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
       packages: write
@@ -27,4 +26,26 @@ jobs:
     with:
       node_version: "24.10.0"
       platforms: linux/amd64,linux/arm64
+    secrets: inherit
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: docker
+    permissions:
+      contents: read
+      deployments: write
+    uses: ./.github/workflows/staging-deploy.yml
+    with:
+      image_tag: ${{ needs.docker.outputs.image_tag }}
+    secrets: inherit
+
+  deploy-production:
+    name: Deploy to Production
+    needs: docker
+    permissions:
+      contents: read
+      deployments: write
+    uses: ./.github/workflows/production-deploy.yml
+    with:
+      image_tag: ${{ needs.docker.outputs.image_tag }}
     secrets: inherit
