@@ -1,0 +1,348 @@
+name: Feature Branch Deploy
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+env:
+  NODE_VERSION: "24.10.0"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  PORT_RANGE_START: 31000
+  PORT_RANGE_END: 32000
+  PORT_MAPPING_NAMESPACE: default
+
+jobs:
+  build:
+    name: Build & Test
+    uses: ./.github/workflows/reusable-build.yml
+    with:
+      node_version: "24.10.0"
+
+  docker:
+    name: Build & Push Docker Image
+    needs: build
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/reusable-docker.yml
+    with:
+      node_version: "24.10.0"
+      platforms: linux/amd64,linux/arm64
+    secrets: inherit
+
+  deploy:
+    name: Deploy Feature Branch
+    runs-on: ubuntu-latest
+    needs: docker
+    permissions:
+      contents: read
+      deployments: write
+    outputs:
+      branch_name: ${{ steps.branch-name.outputs.SANITIZED }}
+      node_port: ${{ steps.allocate-port.outputs.PORT }}
+      deployment_url: https://${{ steps.branch-name.outputs.SANITIZED }}.${{ secrets.CLOUDFLARE_DOMAIN }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        run: |
+          MISSING_SECRETS=()
+
+          if [ -z "${{ secrets.KUBECONFIG }}" ]; then
+            MISSING_SECRETS+=("KUBECONFIG")
+          fi
+          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
+            MISSING_SECRETS+=("CLOUDFLARE_API_TOKEN")
+          fi
+          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
+            MISSING_SECRETS+=("CLOUDFLARE_ACCOUNT_ID")
+          fi
+          if [ -z "${{ secrets.CLOUDFLARE_TUNNEL_ID }}" ]; then
+            MISSING_SECRETS+=("CLOUDFLARE_TUNNEL_ID")
+          fi
+          if [ -z "${{ secrets.CLOUDFLARE_DOMAIN }}" ]; then
+            MISSING_SECRETS+=("CLOUDFLARE_DOMAIN")
+          fi
+
+          if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
+            echo "✗ ERROR: Missing required secrets:"
+            printf '  - %s\n' "${MISSING_SECRETS[@]}"
+            echo ""
+            echo "Please configure these secrets in your repository settings."
+            exit 1
+          fi
+
+          echo "✓ All required secrets are configured"
+
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "v3.13.0"
+
+      - name: Setup Kubernetes config
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Sanitize branch name
+        id: branch-name
+        run: |
+          BRANCH_NAME="${{ github.ref_name }}"
+          SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
+          echo "SANITIZED=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Allocate port for feature branch
+        id: allocate-port
+        run: |
+          # Create ConfigMap if it doesn't exist
+          kubectl create configmap feature-branch-port-mappings -n ${{ env.PORT_MAPPING_NAMESPACE }} --dry-run=client -o yaml | kubectl apply -f -
+
+          # Get existing port mappings
+          EXISTING_PORTS=$(kubectl get configmap feature-branch-port-mappings -n ${{ env.PORT_MAPPING_NAMESPACE }} -o jsonpath='{.data}' 2>/dev/null || echo "{}")
+
+          # Check if branch already has a port
+          BRANCH_PORT=$(echo "$EXISTING_PORTS" | jq -r '."${{ steps.branch-name.outputs.SANITIZED }}" // empty')
+
+          if [ -n "$BRANCH_PORT" ]; then
+            echo "✓ Port $BRANCH_PORT already allocated for this branch"
+            echo "PORT=$BRANCH_PORT" >> $GITHUB_OUTPUT
+          else
+            # Find available port
+            ALL_PORTS=$(echo "$EXISTING_PORTS" | jq -r '.[]' 2>/dev/null || echo "")
+            PORT_FOUND=false
+
+            for PORT in $(seq ${{ env.PORT_RANGE_START }} ${{ env.PORT_RANGE_END }}); do
+              if ! echo "$ALL_PORTS" | grep -q "^${PORT}$"; then
+                echo "✓ Allocated port $PORT for branch ${{ steps.branch-name.outputs.SANITIZED }}"
+                echo "PORT=$PORT" >> $GITHUB_OUTPUT
+                PORT_FOUND=true
+
+                # Update ConfigMap
+                kubectl patch configmap feature-branch-port-mappings -n ${{ env.PORT_MAPPING_NAMESPACE }} \
+                  --type merge \
+                  -p "{\"data\":{\"${{ steps.branch-name.outputs.SANITIZED }}\":\"$PORT\"}}"
+
+                break
+              fi
+            done
+
+            # Check if we failed to allocate a port
+            if [ "$PORT_FOUND" = false ]; then
+              echo "✗ ERROR: All ports in range ${{ env.PORT_RANGE_START }}-${{ env.PORT_RANGE_END }} are exhausted!"
+              echo ""
+              echo "Current port allocations:"
+              kubectl get configmap feature-branch-port-mappings -n ${{ env.PORT_MAPPING_NAMESPACE }} -o json | jq -r '.data | to_entries | .[] | "\(.key): \(.value)"'
+              echo ""
+              echo "Please clean up unused feature branches or expand the port range."
+              exit 1
+            fi
+          fi
+
+      - name: Copy GHCR secret to feature namespace
+        run: |
+          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
+
+          # Create namespace if it doesn't exist
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+
+          # Copy ghcr-secret from main namespace to feature namespace only if it doesn't exist
+          if ! kubectl get secret ghcr-secret -n "$NAMESPACE" &>/dev/null; then
+            kubectl get secret ghcr-secret -n nextjs-frontend-template -o yaml | \
+              sed "s/namespace: nextjs-frontend-template/namespace: $NAMESPACE/" | \
+              kubectl apply -f -
+            echo "✓ Copied ghcr-secret to $NAMESPACE"
+          else
+            echo "✓ Secret ghcr-secret already exists in $NAMESPACE"
+          fi
+
+      - name: Deploy with Helm
+        run: |
+          IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
+
+          helm upgrade --install nextjs-app-${{ steps.branch-name.outputs.SANITIZED }} ./helm/nextjs-app \
+            -n "$NAMESPACE" \
+            --create-namespace \
+            -f ./helm/nextjs-app/values-feature.yaml \
+            --set image.tag=${{ needs.docker.outputs.image_tag }} \
+            --set image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER} \
+            --set service.nodePort=${{ steps.allocate-port.outputs.PORT }} \
+            --atomic \
+            --wait \
+            --timeout 10m
+
+      - name: Verify deployment
+        run: |
+          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
+          kubectl rollout status deployment/nextjs-app-${{ steps.branch-name.outputs.SANITIZED }} -n "$NAMESPACE" --timeout=1m
+
+      - name: Create Cloudflare Tunnel route
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
+          CLOUDFLARE_DOMAIN: ${{ secrets.CLOUDFLARE_DOMAIN }}
+        run: |
+          SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
+          PORT="${{ steps.allocate-port.outputs.PORT }}"
+          FULL_HOSTNAME="${SUBDOMAIN}.${CLOUDFLARE_DOMAIN}"
+
+          echo "Adding Cloudflare tunnel route for: $FULL_HOSTNAME -> http://localhost:${PORT}"
+
+          # Get current tunnel configuration
+          CURRENT_CONFIG=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json")
+
+          # Check if we got a valid response
+          if ! echo "$CURRENT_CONFIG" | jq -e '.success == true' >/dev/null 2>&1; then
+            echo "✗ Failed to get current tunnel configuration"
+            echo "$CURRENT_CONFIG" | jq '.'
+            exit 1
+          fi
+
+          # Extract current ingress rules
+          CURRENT_INGRESS=$(echo "$CURRENT_CONFIG" | jq '.result.config.ingress // []')
+
+          # Remove any existing entry for this hostname (if redeploying)
+          CURRENT_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" '
+            map(select(.hostname != $hostname))
+          ')
+
+          # Add the new route before the catch-all rule
+          NEW_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" --arg service "http://localhost:${PORT}" '
+            # Remove catch-all if present
+            map(select(.service != "http_status:404")) +
+            # Add new route
+            [{
+              "hostname": $hostname,
+              "service": $service
+            }] +
+            # Add catch-all at the end
+            [{"service": "http_status:404"}]
+          ')
+
+          # Update tunnel configuration with new ingress rules
+          UPDATE_RESPONSE=$(curl -s -X PUT \
+            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data "{\"config\": {\"ingress\": $NEW_INGRESS}}")
+
+          if echo "$UPDATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
+            echo "✓ Successfully added tunnel route for $FULL_HOSTNAME"
+            echo "Current routes:"
+            echo "$NEW_INGRESS" | jq -r '.[] | select(.hostname) | "  - \(.hostname) -> \(.service)"'
+          else
+            echo "✗ Failed to update tunnel configuration"
+            echo "$UPDATE_RESPONSE" | jq '.'
+            exit 1
+          fi
+
+      - name: Create Cloudflare DNS record
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
+          CLOUDFLARE_DOMAIN: ${{ secrets.CLOUDFLARE_DOMAIN }}
+        run: |
+          SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
+          FULL_HOSTNAME="${SUBDOMAIN}.${CLOUDFLARE_DOMAIN}"
+
+          echo "Creating DNS CNAME record for: $FULL_HOSTNAME"
+
+          # Get Zone ID for the domain
+          ZONE_RESPONSE=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/zones?name=${CLOUDFLARE_DOMAIN}" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json")
+
+          ZONE_ID=$(echo "$ZONE_RESPONSE" | jq -r '.result[0].id')
+
+          if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "null" ]; then
+            echo "✗ Failed to get Zone ID for domain: $CLOUDFLARE_DOMAIN"
+            echo "$ZONE_RESPONSE" | jq '.'
+            exit 1
+          fi
+
+          echo "✓ Found Zone ID: $ZONE_ID"
+
+          # Check if DNS record already exists
+          EXISTING_RECORD=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=CNAME&name=${FULL_HOSTNAME}" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json")
+
+          RECORD_ID=$(echo "$EXISTING_RECORD" | jq -r '.result[0].id // empty')
+
+          if [ -n "$RECORD_ID" ]; then
+            echo "✓ DNS record already exists, updating it"
+            UPDATE_RESPONSE=$(curl -s -X PUT \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "{
+                \"type\": \"CNAME\",
+                \"name\": \"${FULL_HOSTNAME}\",
+                \"content\": \"${CLOUDFLARE_TUNNEL_ID}.cfargotunnel.com\",
+                \"ttl\": 1,
+                \"proxied\": true
+              }")
+
+            if echo "$UPDATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
+              echo "✓ Successfully updated DNS record for $FULL_HOSTNAME"
+            else
+              echo "✗ Failed to update DNS record"
+              echo "$UPDATE_RESPONSE" | jq '.'
+              exit 1
+            fi
+          else
+            echo "Creating new DNS record"
+            CREATE_RESPONSE=$(curl -s -X POST \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "{
+                \"type\": \"CNAME\",
+                \"name\": \"${FULL_HOSTNAME}\",
+                \"content\": \"${CLOUDFLARE_TUNNEL_ID}.cfargotunnel.com\",
+                \"ttl\": 1,
+                \"proxied\": true
+              }")
+
+            if echo "$CREATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
+              echo "✓ Successfully created DNS record for $FULL_HOSTNAME"
+            else
+              echo "✗ Failed to create DNS record"
+              echo "$CREATE_RESPONSE" | jq '.'
+              exit 1
+            fi
+          fi
+
+      - name: Create GitHub Deployment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployment = await github.rest.repos.createDeployment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: context.ref,
+              environment: `feature-${{ steps.branch-name.outputs.SANITIZED }}`,
+              auto_merge: false,
+              required_contexts: []
+            });
+
+            await github.rest.repos.createDeploymentStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              deployment_id: deployment.data.id,
+              state: 'success',
+              environment_url: 'https://${{ steps.branch-name.outputs.SANITIZED }}.${{ secrets.CLOUDFLARE_DOMAIN }}',
+              description: 'Feature branch deployment successful'
+            });

@@ -116,3 +116,8 @@ startupProbe:
   periodSeconds: 10
   timeoutSeconds: 3
   failureThreshold: 30
+
+# Feature branch configuration
+featureBranch:
+  enabled: false
+  portMappingNamespace: "default"
