@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       image_tag:
-        description: 'Docker image tag to deploy'
+        description: "Docker image tag to deploy"
         required: true
         type: string
 
@@ -76,24 +76,24 @@ jobs:
       - name: Copy GHCR secret to staging namespace
         run: |
           # Create namespace if it doesn't exist
-          kubectl create namespace nextjs-staging --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create namespace ${{ github.event.repository.name }}-staging --dry-run=client -o yaml | kubectl apply -f -
 
           # Copy ghcr-secret from main namespace to staging namespace only if it doesn't exist
-          if ! kubectl get secret ghcr-secret -n nextjs-staging &>/dev/null; then
+          if ! kubectl get secret ghcr-secret -n ${{ github.event.repository.name }}-staging &>/dev/null; then
             kubectl get secret ghcr-secret -n ${{ github.event.repository.name }} -o yaml | \
-              sed "s/namespace: ${{ github.event.repository.name }}/namespace: nextjs-staging/" | \
+              sed "s/namespace: ${{ github.event.repository.name }}/namespace: ${{ github.event.repository.name }}-staging/" | \
               kubectl apply -f -
-            echo "✓ Copied ghcr-secret to nextjs-staging"
+            echo "✓ Copied ghcr-secret to ${{ github.event.repository.name }}-staging"
           else
-            echo "✓ Secret ghcr-secret already exists in nextjs-staging"
+            echo "✓ Secret ghcr-secret already exists in ${{ github.event.repository.name }}-staging"
           fi
 
       - name: Deploy with Helm
         run: |
           IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
 
-          helm upgrade --install nextjs-app-staging ./helm/nextjs-app \
-            -n nextjs-staging \
+          helm upgrade --install nextjs-app ./helm/nextjs-app \
+            -n ${{ github.event.repository.name }}-staging \
             --create-namespace \
             -f ./helm/nextjs-app/values-staging.yaml \
             --set image.tag=${{ inputs.image_tag }} \
@@ -104,7 +104,7 @@ jobs:
 
       - name: Verify deployment
         run: |
-          kubectl rollout status deployment/nextjs-app-staging -n nextjs-staging --timeout=1m
+          kubectl rollout status deployment/nextjs-app -n ${{ github.event.repository.name }}-staging --timeout=1m
 
       - name: Create Cloudflare Tunnel route
         env:
@@ -265,6 +265,6 @@ jobs:
               repo: context.repo.repo,
               deployment_id: deployment.data.id,
               state: 'success',
-              environment_url: 'https://staging.${{ vars.CLOUDFLARE_DOMAIN }}',
+              environment_url: 'https://staging-${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}',
               description: 'Staging deployment successful'
             });

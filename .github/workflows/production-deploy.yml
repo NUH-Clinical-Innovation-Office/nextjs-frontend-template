@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       image_tag:
-        description: 'Docker image tag to deploy'
+        description: "Docker image tag to deploy"
         required: true
         type: string
 
@@ -256,6 +256,6 @@ jobs:
               repo: context.repo.repo,
               deployment_id: deployment.data.id,
               state: 'success',
-              environment_url: 'https://${{ vars.CLOUDFLARE_DOMAIN }}',
+              environment_url: 'https://${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}',
               description: 'Production deployment successful'
             });
