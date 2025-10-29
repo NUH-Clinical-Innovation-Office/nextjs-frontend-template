@@ -10,6 +10,9 @@ jobs:
   cleanup:
     name: Cleanup Feature Branch Deployment
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -103,10 +106,10 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
-          CLOUDFLARE_DOMAIN: ${{ secrets.CLOUDFLARE_DOMAIN }}
+          CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
         run: |
           SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
-          FULL_HOSTNAME="${SUBDOMAIN}.${CLOUDFLARE_DOMAIN}"
+          FULL_HOSTNAME="${SUBDOMAIN}-dev-${{ github.event.repository.name }}.${CLOUDFLARE_DOMAIN}"
 
           echo "Attempting to remove Cloudflare tunnel route for: $FULL_HOSTNAME"
 
@@ -152,3 +155,83 @@ jobs:
             echo "⚠ Orphaned route: $FULL_HOSTNAME"
           fi
 
+      - name: Remove Cloudflare DNS record
+        if: steps.get-port.outputs.PORT != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
+        run: |
+          SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
+          FULL_HOSTNAME="${SUBDOMAIN}-dev-${{ github.event.repository.name }}.${CLOUDFLARE_DOMAIN}"
+
+          echo "Attempting to remove Cloudflare DNS record for: $FULL_HOSTNAME"
+
+          # Get Zone ID for the domain
+          ZONE_RESPONSE=$(curl -s -X GET \
+            "https://api.cloudflare.com/client/v4/zones?name=${CLOUDFLARE_DOMAIN}" \
+            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+            -H "Content-Type: application/json")
+
+          ZONE_ID=$(echo "$ZONE_RESPONSE" | jq -r '.result[0].id')
+
+          if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "null" ]; then
+            echo "⚠ WARNING: Could not get Zone ID for domain: $CLOUDFLARE_DOMAIN"
+            echo "$ZONE_RESPONSE" | jq '.'
+          else
+            # Check if DNS record exists
+            EXISTING_RECORD=$(curl -s -X GET \
+              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=CNAME&name=${FULL_HOSTNAME}" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json")
+
+            RECORD_ID=$(echo "$EXISTING_RECORD" | jq -r '.result[0].id // empty')
+
+            if [ -n "$RECORD_ID" ]; then
+              DELETE_RESPONSE=$(curl -s -X DELETE \
+                "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
+                -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+                -H "Content-Type: application/json")
+
+              if echo "$DELETE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
+                echo "✓ Successfully removed DNS record for $FULL_HOSTNAME"
+              else
+                echo "⚠ WARNING: Failed to delete DNS record"
+                echo "$DELETE_RESPONSE" | jq '.'
+              fi
+            else
+              echo "✓ DNS record not found (may have been already removed)"
+            fi
+          fi
+
+      - name: Deactivate GitHub deployment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = context.payload.pull_request.head.ref;
+            const environmentName = `preview-${branchName}`;
+
+            try {
+              // Get all deployments for this environment
+              const { data: deployments } = await github.rest.repos.listDeployments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment: environmentName
+              });
+
+              // Mark all deployments as inactive
+              for (const deployment of deployments) {
+                await github.rest.repos.createDeploymentStatus({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  deployment_id: deployment.id,
+                  state: 'inactive'
+                });
+
+                console.log(`✓ Deactivated deployment ${deployment.id}`);
+              }
+
+              console.log(`✓ Cleaned up ${deployments.length} deployment(s) for environment: ${environmentName}`);
+            } catch (error) {
+              console.log(`⚠ Warning: Could not deactivate deployments: ${error.message}`);
+            }
