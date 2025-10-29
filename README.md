@@ -315,4 +315,28 @@ To learn more about the technologies used:
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE). You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, provided that you include the original copyright notice and permission notice in all copies or substantial portions of the software. Attribution is appreciated when using or modifying this template.
+Copyright 2025 NUH Department of Medicine
+
+This project is licensed under the [Apache 2.0 License](LICENSE).
+
+### What This Means For You
+
+You may use, reproduce, and distribute this software, with or without modifications, provided that you:
+
+1. **Include the License**: Provide a copy of the [LICENSE](LICENSE) file with any distribution
+2. **Include the NOTICE**: Provide a copy of the [NOTICE](NOTICE) file with any distribution
+3. **State Changes**: Clearly indicate any modifications you make to the original work
+4. **Retain Copyright Notices**: Keep all copyright, patent, trademark, and attribution notices from the original source
+5. **Provide Attribution**: Credit the original authors when using or modifying this work
+
+### Patent Grant
+
+Apache 2.0 includes an express patent license grant, protecting you from patent claims by contributors related to their contributions.
+
+### No Trademark Rights
+
+This license does not grant permission to use NUH trade names, trademarks, or service marks, except as required for reasonable and customary use in describing the origin of the work.
+
+### Disclaimer
+
+This software is provided "AS IS", WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
