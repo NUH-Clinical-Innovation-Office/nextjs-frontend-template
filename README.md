@@ -1,6 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next.js Frontend Template
+
+A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailwind CSS, and comprehensive tooling for modern web application development.
+
+## Table of Contents
+
+- [Features](#features)
+  - [Core Framework](#core-framework)
+  - [UI Components](#ui-components)
+  - [Developer Experience](#developer-experience)
+  - [Testing](#testing)
+  - [Security](#security)
+  - [CI/CD & Deployment](#cicd--deployment)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Initial Setup for New Users](#initial-setup-for-new-users)
+  - [Running Locally](#running-locally)
+  - [Available Scripts](#available-scripts)
+  - [Husky Git Hooks](#husky-git-hooks)
+- [Security](#security-1)
+  - [Security Headers](#security-headers)
+- [Project Structure](#project-structure)
+- [Documentation](#documentation)
+- [Deployment](#deployment)
+  - [Docker](#docker)
+  - [CI/CD](#cicd)
+- [Learn More](#learn-more)
+- [License](#license)
+
+## Features
+
+### Core Framework
+
+- **Next.js 16** with App Router and Turbopack
+- **React 19** with latest features
+- **TypeScript** for type safety
+- **Tailwind CSS 4** for styling with PostCSS
+
+### UI Components
+
+- **shadcn/ui** components (Button, Card, Badge, Dropdown Menu)
+- **Radix UI** primitives for accessible components
+- **Lucide React** icons
+- **next-themes** for dark mode support with theme toggle
+- Atomic design structure (atoms, molecules, providers)
+
+### Developer Experience
+
+- **Biome** for fast linting and formatting
+- **Vitest** for unit testing with React Testing Library
+- **Husky** for git hooks
+- **Commitlint** for conventional commit messages
+- **Depcheck** for dependency management
+- **TypeScript strict mode** with type checking
+
+### Testing
+
+- Unit testing with Vitest and React Testing Library
+- UI mode for interactive testing
+- Watch mode for development
+
+### Security
+
+- Comprehensive security headers (CSP, X-Frame-Options, etc.)
+- Content Security Policy configured
+- Environment variable validation with Zod
+- HTTPS-only image loading
+
+### CI/CD & Deployment
+
+- **GitHub Actions workflows** for staging, production, and feature branches
+- **Feature branch deployments** with automatic preview environments and cleanup
+- **Docker** support with Docker Compose
+- **Kubernetes** service account configuration for GitHub Actions
+- **HashiCorp Vault** integration for secure secrets management
+- **Cloudflare Tunnel** integration for secure external access
 
 ## Getting Started
+
+### Prerequisites
+
+Follow the setup guide at [NUH Clinical Innovation Office Setup](https://github.com/NUH-Clinical-Innovation-Office/setup) to install:
+
+- Node.js >= 24.10.0
+- npm, yarn, pnpm, or bun
 
 ### Initial Setup for New Users
 
@@ -21,6 +103,44 @@ cp .env.example .env.local
 ```
 
 Edit `.env.local` with your configuration. See [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) for details.
+
+### Running Locally
+
+Start the development server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+The development server includes:
+
+- Hot module replacement with Turbopack
+- Fast refresh for instant updates
+- TypeScript type checking
+- Auto-compilation on file changes
+
+### Available Scripts
+
+```bash
+# Development
+npm run dev              # Start development server with Turbopack
+npm run build           # Build production bundle
+npm start               # Start production server
+
+# Testing
+npm run test            # Run tests once
+npm run test:watch      # Run tests in watch mode
+npm run test:ui         # Open Vitest UI for interactive testing
+npm run test:coverage   # Generate coverage report
+
+# Code Quality
+npm run lint            # Check code with Biome
+npm run format          # Format code with Biome
+npm run type-check      # Run TypeScript type checking
+npm run depcheck        # Check for unused dependencies
+```
 
 ### Husky Git Hooks
 
@@ -109,37 +229,78 @@ This template includes security headers configured in `next.config.ts` to protec
 
 **Note:** The CSP is intentionally permissive for a template. For production, tighten it by removing `'unsafe-inline'` and `'unsafe-eval'` based on your specific requirements.
 
-### Development Server
+## Project Structure
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```text
+├── src/
+│   ├── app/                 # Next.js App Router pages
+│   │   ├── page.tsx        # Home page
+│   │   ├── layout.tsx      # Root layout
+│   │   └── globals.css     # Global styles
+│   ├── components/
+│   │   ├── atoms/          # Basic UI elements
+│   │   ├── molecules/      # Composite components
+│   │   ├── providers/      # Context providers
+│   │   └── ui/             # shadcn/ui components
+│   └── lib/
+│       ├── utils.ts        # Utility functions
+│       └── env.ts          # Environment validation
+├── docs/                   # Documentation
+├── k8s/                    # Kubernetes service account
+├── scripts/                # Utility scripts
+└── .github/workflows/      # CI/CD workflows
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Documentation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) - Configure and validate environment variables with Zod
+- [Vault Secrets Management](docs/VAULT_SECRETS_MANAGEMENT.md) - HashiCorp Vault integration for secure secrets
+- [Feature Branch Deployment](docs/FEATURE_BRANCH_DEPLOYMENT.md) - Automatic feature branch deployments with Cloudflare
+- [Cloudflare GitHub Setup](docs/CLOUDFLARE_GITHUB_SETUP.md) - Cloudflare Tunnel and DNS configuration
+- [Workflow Fixes](docs/WORKFLOW_FIXES.md) - CI/CD workflow documentation and fixes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Deployment
+
+### Docker
+
+Build and run the Docker image:
+
+```bash
+docker build -t nextjs-app .
+docker run -p 3000:3000 nextjs-app
+```
+
+Docker Compose is also available:
+
+```bash
+docker-compose up
+```
+
+### CI/CD
+
+This template includes GitHub Actions workflows for:
+
+- **Staging deployment** - Automatic deployment to staging environment
+- **Production deployment** - Production deployments with approval
+- **Feature branch deployment** - Automatic preview deployments for feature branches
+- **Feature cleanup** - Auto-cleanup when branches are deleted
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about the technologies used:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- [Next.js Documentation](https://nextjs.org/docs) - Learn about Next.js features and API
+- [React Documentation](https://react.dev) - Learn React 19 features
+- [Tailwind CSS](https://tailwindcss.com/docs) - Utility-first CSS framework
+- [shadcn/ui](https://ui.shadcn.com) - Re-usable components
+- [Vitest](https://vitest.dev) - Testing framework
+- [Biome](https://biomejs.dev) - Linting and formatting
+- [Docker](https://docs.docker.com) - Containerization platform
+- [Kubernetes](https://kubernetes.io/docs) - Container orchestration
+- [Helm](https://helm.sh/docs) - Kubernetes package manager
+- [GitHub Actions](https://docs.github.com/en/actions) - CI/CD workflows
+- [Cloudflare](https://developers.cloudflare.com) - CDN and DNS services
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the [MIT License](LICENSE). You are free to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of this software, provided that you include the original copyright notice and permission notice in all copies or substantial portions of the software. Attribution is appreciated when using or modifying this template.
