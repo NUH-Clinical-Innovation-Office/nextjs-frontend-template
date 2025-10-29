@@ -253,11 +253,23 @@ This template includes security headers configured in `next.config.ts` to protec
 
 ## Documentation
 
-- [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) - Configure and validate environment variables with Zod
-- [Vault Secrets Management](docs/VAULT_SECRETS_MANAGEMENT.md) - HashiCorp Vault integration for secure secrets
+### Setup & Infrastructure
+
+- [Kubernetes Setup Guide](docs/kubernetes-setup.md) - Overview of Kubernetes cluster setup options (Raspberry Pi vs AWS)
+- [Kubernetes on Raspberry Pi](docs/kubernetes-setup-raspberry-pi.md) - Self-hosted K3s cluster setup on Raspberry Pi
+- [Kubernetes on AWS with Terraform](docs/kubernetes-setup-aws.md) - Production-ready EKS cluster using Terraform IaC
+- [Helm & Kubernetes Guide](docs/helm-kubernetes-setup.md) - Complete guide to Helm package manager and chart deployment
+- [Vault Secrets Management](docs/vault-setup-and-deployment.md) - HashiCorp Vault integration for secure secrets across environments
+
+### Deployment & CI/CD
+
+- [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration
 - [Feature Branch Deployment](docs/FEATURE_BRANCH_DEPLOYMENT.md) - Automatic feature branch deployments with Cloudflare
-- [Cloudflare GitHub Setup](docs/CLOUDFLARE_GITHUB_SETUP.md) - Cloudflare Tunnel and DNS configuration
 - [Workflow Fixes](docs/WORKFLOW_FIXES.md) - CI/CD workflow documentation and fixes
+
+### Configuration
+
+- [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) - Configure and validate environment variables with Zod
 
 ## Deployment
 
