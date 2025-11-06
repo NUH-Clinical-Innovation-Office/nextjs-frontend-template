@@ -4,13 +4,13 @@ on:
   workflow_call:
     inputs:
       node_version:
-        description: 'Node.js version to use'
+        description: "Node.js version to use"
         required: false
         type: string
-        default: '24.10.0'
+        default: "24.10.0"
     outputs:
       cache_hit:
-        description: 'Whether build cache was hit'
+        description: "Whether build cache was hit"
         value: ${{ jobs.build.outputs.cache_hit }}
 
 jobs:
@@ -106,3 +106,42 @@ jobs:
       - name: Run depcheck
         run: npm run depcheck
 
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: setup
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@v0.2.1
+        with:
+          version: v0.56.1
+
+      - name: Run Trivy scanner (vulnerabilities & misconfigurations)
+        run: |
+          trivy fs . \
+            --format sarif \
+            --output trivy-results.sarif \
+            --severity CRITICAL,HIGH \
+            --scanners vuln,misconfig \
+            --skip-dirs docs
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+
+      - name: Run Trivy scan with table output
+        run: |
+          trivy fs . \
+            --format table \
+            --exit-code 1 \
+            --severity CRITICAL,HIGH \
+            --scanners vuln,misconfig \
+            --skip-dirs docs

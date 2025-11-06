@@ -21,8 +21,8 @@ jobs:
         run: |
           MISSING_SECRETS=()
 
-          if [ -z "${{ secrets.KUBECONFIG }}" ]; then
-            MISSING_SECRETS+=("KUBECONFIG")
+          if [ -z "${{ secrets.KUBECONFIG_STAGING }}" ]; then
+            MISSING_SECRETS+=("KUBECONFIG_STAGING")
           fi
 
           # Cloudflare secrets are optional since the step is conditional
@@ -48,7 +48,7 @@ jobs:
 
       - name: Setup Kubernetes config
         env:
-          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG_STAGING }}
         run: |
           mkdir -p ~/.kube
           echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config

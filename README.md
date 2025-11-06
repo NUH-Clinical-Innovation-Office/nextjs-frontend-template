@@ -65,6 +65,7 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 - Content Security Policy configured
 - Environment variable validation with Zod
 - HTTPS-only image loading
+- **Trivy** security scanner for vulnerability detection in dependencies, containers, and IaC
 
 ### CI/CD & Deployment
 
@@ -140,6 +141,10 @@ npm run lint            # Check code with Biome
 npm run format          # Format code with Biome
 npm run type-check      # Run TypeScript type checking
 npm run depcheck        # Check for unused dependencies
+
+# Security Scanning
+npm run security-scan         # Run Trivy security scans on all project assets
+npm run security-scan:image   # Build and scan Docker image for vulnerabilities
 ```
 
 ### Husky Git Hooks
@@ -187,6 +192,58 @@ git commit --allow-empty -m "test: verify husky setup"
 ```
 
 ## Security
+
+### Trivy Security Scanner
+
+This template includes [Trivy](https://trivy.dev), an open-source vulnerability scanner by Aqua Security. Trivy performs comprehensive security analysis across multiple layers of your application:
+
+**What Trivy Scans:**
+
+- **Dependencies (npm packages)**: Detects known vulnerabilities (CVEs) in your JavaScript/TypeScript dependencies
+- **Docker Images**: Scans container images for OS and application vulnerabilities
+- **Dockerfile**: Analyzes Dockerfile for misconfigurations and security best practices
+- **Kubernetes/Helm**: Checks Infrastructure-as-Code (IaC) for security issues and misconfigurations
+- **GitHub Actions**: Reviews CI/CD workflows for security risks
+
+**Security Scan Commands:**
+
+```bash
+# Comprehensive scan of all project assets (dependencies, Dockerfile, Helm charts, workflows, docker-compose)
+npm run security-scan
+
+# Build and scan the Docker image for vulnerabilities
+npm run security-scan:image
+```
+
+**Scan Coverage:**
+
+The `security-scan` command runs 3 scans:
+
+1. Project dependencies and configurations (`trivy fs . --skip-dirs docs`) - Scans npm packages, Dockerfiles, Helm charts, workflows, and other config files
+2. Dockerfile best practices (`trivy config Dockerfile`)
+3. Helm chart configurations (`trivy config helm/`)
+
+All scans report CRITICAL and HIGH severity vulnerabilities only, filtering out noise from medium/low issues. The `docs/` directory is excluded from scanning as it contains sample/reference Kubernetes configurations with intentionally elevated CI/CD permissions.
+
+**Prerequisites:**
+
+Trivy must be installed on your system. Installation options:
+
+```bash
+# macOS (Homebrew)
+brew install trivy
+
+# Linux (Debian/Ubuntu)
+sudo apt-get install wget apt-transport-https gnupg lsb-release
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+sudo apt-get update
+sudo apt-get install trivy
+
+# Or download binary from https://github.com/aquasecurity/trivy/releases
+```
+
+See [Trivy Installation Guide](https://aquasecurity.github.io/trivy/latest/getting-started/installation/) for more options.
 
 ### Security Headers
 
@@ -307,6 +364,7 @@ To learn more about the technologies used:
 - [shadcn/ui](https://ui.shadcn.com) - Re-usable components
 - [Vitest](https://vitest.dev) - Testing framework
 - [Biome](https://biomejs.dev) - Linting and formatting
+- [Trivy](https://trivy.dev) - Vulnerability scanner for dependencies, containers, and IaC
 - [Docker](https://docs.docker.com) - Containerization platform
 - [Kubernetes](https://kubernetes.io/docs) - Container orchestration
 - [Helm](https://helm.sh/docs) - Kubernetes package manager
