@@ -2,13 +2,17 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  experimental: {
+    // Optimize package imports for faster builds and smaller bundles
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-dropdown-menu'],
+  },
   // biome-ignore lint/suspicious/useAwait: due to nextjs config
   async headers() {
     return [
       {
         source: '/:path*',
         headers: [
-          // Prevents clickjacking attacks by disallowing the site to be embedded in iframes
+          // Prevents click-jacking attacks by disallowing the site to be embedded in iframes
           // Protects against attackers overlaying invisible frames to capture user interactions
           {
             key: 'X-Frame-Options',
@@ -37,7 +41,7 @@ const nextConfig: NextConfig = {
           // Enforces HTTPS-only transport for all future requests (1 year duration)
           // Critical for preventing protocol downgrade attacks and ensuring secure connections
           // includeSubDomains: applies to all subdomains
-          // preload: allows inclusion in browser HSTS preload lists for first-visit protection
+          // preload: allows inclusion in browser HTTP Strict Transport Security preload lists for first-visit protection
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains; preload',
@@ -60,7 +64,7 @@ const nextConfig: NextConfig = {
           // - Remove 'unsafe-inline' by using nonces or hashes for inline scripts/styles
           // - Remove 'unsafe-eval' by avoiding eval(), new Function(), and similar dynamic code execution
           // - Restrict img-src to specific domains instead of allowing all HTTPS sources
-          // - Add object-src 'none' to block plugins, frame-ancestors 'none' for additional clickjacking protection
+          // - Add object-src 'none' to block plugins, frame-ancestors 'none' for additional click-jacking protection
           {
             key: 'Content-Security-Policy',
             value:
