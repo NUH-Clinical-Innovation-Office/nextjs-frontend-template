@@ -327,6 +327,58 @@ This template includes security headers configured in `next.config.ts` to protec
 
 - [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) - Configure and validate environment variables with Zod
 
+### Kubernetes Deployment
+
+The Helm chart in `helm/nextjs-app/` includes production-ready Kubernetes resources:
+
+**Core Resources:**
+
+- **Deployment**: Manages application pods with rolling updates
+- **Service**: NodePort service for pod networking
+- **ServiceAccount**: RBAC identity for pods
+- **HPA (Horizontal Pod Autoscaler)**: Auto-scales based on CPU/memory (disabled by default)
+- **Ingress**: Nginx ingress with Let's Encrypt TLS (disabled by default)
+- **PodDisruptionBudget**: Ensures availability during disruptions (disabled by default)
+
+**Environment-specific configurations:**
+
+- `values.yaml` - Base configuration (2 replicas, 500m CPU limit, 512Mi memory)
+- `values-feature.yaml` - Feature branch overrides
+- `values-staging.yaml` - Staging environment settings
+- `values-production.yaml` - Production environment settings
+
+**High Availability with PodDisruptionBudget:**
+
+PodDisruptionBudget (PDB) prevents Kubernetes from disrupting too many pods during voluntary operations like node drains, rolling updates, or cluster scaling.
+
+Enable in production for zero-downtime deployments:
+
+```yaml
+# values-production.yaml
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1        # Keep at least 1 pod running during disruptions
+  # maxUnavailable: 1    # Alternative: allow max 1 pod to be unavailable
+```
+
+**When to use:**
+
+- Production environments with `replicaCount >= 2`
+- Critical services requiring high availability
+- Clusters with frequent node maintenance or autoscaling
+
+**Configuration options:**
+
+- `minAvailable`: Guarantees minimum pod count (use for critical services)
+- `maxUnavailable`: Limits disruption scope (use for flexibility during updates)
+
+**Security features:**
+
+- Non-root user (UID 1001) with `runAsNonRoot: true`
+- Read-only root filesystem with `readOnlyRootFilesystem: true`
+- Dropped all capabilities with `capabilities.drop: [ALL]`
+- No privilege escalation with `allowPrivilegeEscalation: false`
+
 ## Deployment
 
 ### Docker
@@ -348,10 +400,39 @@ docker-compose up
 
 This template includes GitHub Actions workflows for:
 
-- **Staging deployment** - Automatic deployment to staging environment
-- **Production deployment** - Production deployments with approval
-- **Feature branch deployment** - Automatic preview deployments for feature branches
-- **Feature cleanup** - Auto-cleanup when branches are deleted
+- **CI Pipeline** (`ci.yml`) - Runs on all pull requests with build, lint, test, and type-check
+- **Staging deployment** (`staging-deploy.yml`) - Automatic deployment to staging environment on merge to main
+- **Production deployment** (`production-deploy.yml`) - Production deployments with approval gate
+- **Feature branch deployment** (`feature-deploy.yml`) - Automatic preview deployments for feature branches
+- **Feature cleanup** (`feature-cleanup.yml`) - Auto-cleanup when feature branches are deleted
+
+#### Reusable Workflows
+
+The template uses reusable workflows to reduce code duplication and ensure consistency:
+
+**`reusable-build.yml`** - Shared build, test, and quality checks workflow
+
+- Runs setup, lint, test, depcheck, and Trivy security scanning in parallel
+- Caches `node_modules` for faster builds
+- Uploads security scan results to GitHub Security tab
+- Configurable Node.js version (default: 24.10.0)
+- Used by: `ci.yml`, `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
+
+**`reusable-docker.yml`** - Docker image build and push workflow
+
+- Multi-platform builds (linux/amd64, linux/arm64)
+- Automatic image tagging with branch name and commit SHA
+- GitHub Container Registry (ghcr.io) integration
+- Build cache optimization using GitHub Actions cache
+- Configurable platforms, registry, and push behavior
+- Outputs: `image_tag`, `image_name` for use in deployment workflows
+- Used by: `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
+
+**Benefits**:
+
+- Single source of truth for build and Docker processes
+- Easier maintenance and updates across all workflows
+- Consistent behavior across environments (staging, production, feature branches)
 
 ## Learn More
 
