@@ -134,7 +134,6 @@ npm start               # Start production server
 npm run test            # Run tests once
 npm run test:watch      # Run tests in watch mode
 npm run test:ui         # Open Vitest UI for interactive testing
-npm run test:coverage   # Generate coverage report
 
 # Code Quality
 npm run lint            # Check code with Biome
@@ -303,7 +302,7 @@ This template includes security headers configured in `next.config.ts` to protec
 │       ├── utils.ts        # Utility functions
 │       └── env.ts          # Environment validation
 ├── docs/                   # Documentation
-├── k8s/                    # Kubernetes service account
+├── helm/                   # Helm charts for Kubernetes
 ├── scripts/                # Utility scripts
 └── .github/workflows/      # CI/CD workflows
 ```
