@@ -1,5 +1,10 @@
 import type { NextConfig } from 'next';
 
+// Bundle analyzer plugin
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const nextConfig: NextConfig = {
   output: 'standalone',
   experimental: {
@@ -60,11 +65,15 @@ const nextConfig: NextConfig = {
             value: 'none',
           },
           // Content Security Policy - Controls which resources can be loaded and executed
-          // Current configuration is permissive for template use. Tighten for production:
-          // - Remove 'unsafe-inline' by using nonces or hashes for inline scripts/styles
-          // - Remove 'unsafe-eval' by avoiding eval(), new Function(), and similar dynamic code execution
-          // - Restrict img-src to specific domains instead of allowing all HTTPS sources
-          // - Add object-src 'none' to block plugins, frame-ancestors 'none' for additional click-jacking protection
+          // CRITICAL: Current configuration allows 'unsafe-inline' and 'unsafe-eval' which significantly
+          // weakens XSS protection. This is permissive for template use and MUST be hardened for production.
+          //
+          // For production use, implement nonce-based CSP:
+          // 1. Generate unique nonce per request in middleware
+          // 2. Pass nonce to script/style tags via headers
+          // 3. Update CSP: script-src 'self' 'nonce-{NONCE}' (remove unsafe-*)
+          //
+          // Reference: https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
           {
             key: 'Content-Security-Policy',
             value:
@@ -86,4 +95,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
