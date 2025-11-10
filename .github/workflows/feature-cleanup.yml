@@ -208,8 +208,8 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const branchName = "${{ steps.branch-name.outputs.SANITIZED }}";
-            const environmentName = `preview-${branchName}`;
+            const branchName = "${{ github.event.ref }}";
+            const environmentName = branchName;
 
             try {
               // Get all deployments for this environment
@@ -234,4 +234,27 @@ jobs:
               console.log(`✓ Cleaned up ${deployments.length} deployment(s) for environment: ${environmentName}`);
             } catch (error) {
               console.log(`⚠ Warning: Could not deactivate deployments: ${error.message}`);
+            }
+
+      - name: Delete GitHub environment
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branchName = "${{ github.event.ref }}";
+            const environmentName = branchName;
+
+            try {
+              await github.rest.repos.deleteAnEnvironment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                environment_name: environmentName
+              });
+
+              console.log(`✓ Deleted environment: ${environmentName}`);
+            } catch (error) {
+              if (error.status === 404) {
+                console.log(`✓ Environment not found (may have been already deleted): ${environmentName}`);
+              } else {
+                console.log(`⚠ Warning: Could not delete environment: ${error.message}`);
+              }
             }
