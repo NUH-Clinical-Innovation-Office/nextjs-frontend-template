@@ -1,0 +1,238 @@
+name: Container Image Cleanup
+
+on:
+  schedule:
+    # Run every Sunday at 2 AM UTC
+    - cron: "0 2 * * 0"
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  # Keep the latest N production/staging images (main-* tags)
+  KEEP_LATEST_PRODUCTION: 3
+  # Keep feature branch images from the last N days
+  FEATURE_RETENTION_DAYS: 7
+
+jobs:
+  cleanup:
+    name: Cleanup Old Container Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get latest production images
+        id: latest-production
+        run: |
+          # Fetch recent commits from main branch to identify the latest production images
+          git fetch origin main --depth=10
+
+          # Get the latest N commit SHAs from main branch
+          LATEST_SHAS=$(git log origin/main --format=%H -n ${{ env.KEEP_LATEST_PRODUCTION }})
+
+          # Build protected tags list (latest + main-{sha} for each of the latest commits)
+          PROTECTED_TAGS="latest"
+          PROTECTED_PATTERNS="latest"
+
+          echo "Latest production commit SHAs:"
+          for SHA in $LATEST_SHAS; do
+            echo "  - $SHA"
+            PROTECTED_TAGS="${PROTECTED_TAGS},main-${SHA}"
+            PROTECTED_PATTERNS="${PROTECTED_PATTERNS},main-${SHA}"
+          done
+
+          echo "PROTECTED_TAGS=$PROTECTED_TAGS" >> $GITHUB_OUTPUT
+          echo "PROTECTED_PATTERNS=$PROTECTED_PATTERNS" >> $GITHUB_OUTPUT
+
+          echo ""
+          echo "✓ Protected tags: $PROTECTED_TAGS"
+
+      - name: Fetch all image versions
+        id: fetch-images
+        run: |
+          IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+
+          echo "Fetching all versions for ${IMAGE_NAME_LOWER}..."
+
+          # Get all package versions using GitHub API (paginate to get all versions)
+          PAGE=1
+          ALL_VERSIONS="[]"
+
+          while true; do
+            VERSIONS=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              "https://api.github.com/users/${{ github.repository_owner }}/packages/container/${{ github.event.repository.name }}/versions?per_page=100&page=$PAGE")
+
+            # Check if we got any results
+            COUNT=$(echo "$VERSIONS" | jq '. | length')
+
+            if [ "$COUNT" -eq 0 ]; then
+              break
+            fi
+
+            # Merge with existing results
+            ALL_VERSIONS=$(echo "$ALL_VERSIONS" "$VERSIONS" | jq -s '.[0] + .[1]')
+
+            # If we got less than 100, we've reached the end
+            if [ "$COUNT" -lt 100 ]; then
+              break
+            fi
+
+            PAGE=$((PAGE + 1))
+          done
+
+          VERSIONS="$ALL_VERSIONS"
+
+          echo "$VERSIONS" > /tmp/versions.json
+
+          TOTAL_IMAGES=$(echo "$VERSIONS" | jq '. | length')
+          echo "✓ Found $TOTAL_IMAGES image versions"
+          echo "TOTAL_IMAGES=$TOTAL_IMAGES" >> $GITHUB_OUTPUT
+
+      - name: Identify images to delete
+        id: identify-deletions
+        run: |
+          # Cutoff date for feature branch images only
+          FEATURE_CUTOFF_DATE=$(date -u -d "${{ env.FEATURE_RETENTION_DAYS }} days ago" +%Y-%m-%dT%H:%M:%SZ)
+          echo "Feature branch cutoff date: $FEATURE_CUTOFF_DATE"
+
+          PROTECTED_TAGS="${{ steps.latest-production.outputs.PROTECTED_TAGS }}"
+
+          # Convert comma-separated tags to JSON array for jq
+          PROTECTED_JSON=$(echo "$PROTECTED_TAGS" | jq -R 'split(",") | map(select(length > 0))')
+
+          # Identify deletable images:
+          # 1. For images with "main-*" tags: keep only the latest N (already in protected list)
+          # 2. For feature branch images: delete if older than FEATURE_RETENTION_DAYS
+          # 3. Always keep "latest" tag
+          # 4. Untagged images are always deleted
+          DELETABLE_IDS=$(jq -r \
+            --arg feature_cutoff "$FEATURE_CUTOFF_DATE" \
+            --argjson protected_tags "$PROTECTED_JSON" '
+            .[] |
+            select(
+              # Image must have tags (or be untagged)
+              .metadata.container.tags as $tags |
+              if ($tags == null or $tags == []) then
+                # Delete untagged images
+                true
+              elif ($tags | any(. == "latest")) then
+                # Never delete "latest" tag
+                false
+              elif ($tags | any(startswith("main-"))) then
+                # For main-* images, delete if NOT in protected list
+                # Check if ANY tag is in the protected list
+                ($tags | map(. as $tag | $protected_tags | any(. == $tag)) | any) | not
+              else
+                # For feature branch images, delete if older than cutoff
+                .updated_at < $feature_cutoff
+              end
+            ) |
+            .id
+          ' /tmp/versions.json)
+
+          if [ -z "$DELETABLE_IDS" ]; then
+            echo "No images to delete"
+            echo "DELETE_COUNT=0" >> $GITHUB_OUTPUT
+          else
+            DELETE_COUNT=$(echo "$DELETABLE_IDS" | wc -l | tr -d ' ')
+            echo "DELETE_COUNT=$DELETE_COUNT" >> $GITHUB_OUTPUT
+            echo "$DELETABLE_IDS" > /tmp/deletable_ids.txt
+            echo "✓ Identified $DELETE_COUNT images for deletion"
+          fi
+
+      - name: Display deletion summary
+        if: steps.identify-deletions.outputs.DELETE_COUNT != '0'
+        run: |
+          echo "=== Deletion Summary ==="
+          echo "Total images: ${{ steps.fetch-images.outputs.TOTAL_IMAGES }}"
+          echo "Images to delete: ${{ steps.identify-deletions.outputs.DELETE_COUNT }}"
+          echo ""
+          echo "Retention policy:"
+          echo "  - Keep latest ${{ env.KEEP_LATEST_PRODUCTION }} production/staging images (main-* tags)"
+          echo "  - Keep feature branch images from last ${{ env.FEATURE_RETENTION_DAYS }} days"
+          echo "  - Always keep 'latest' tag"
+          echo ""
+          echo "Protected tags: ${{ steps.latest-production.outputs.PROTECTED_PATTERNS }}"
+          echo ""
+          echo "=== Images to be deleted ==="
+
+          # Show details of images being deleted
+          while IFS= read -r VERSION_ID; do
+            if [ -n "$VERSION_ID" ]; then
+              jq -r --arg id "$VERSION_ID" '
+                .[] |
+                select(.id == ($id | tonumber)) |
+                "ID: \(.id) | Tags: \(.metadata.container.tags // ["<untagged>"] | join(", ")) | Updated: \(.updated_at)"
+              ' /tmp/versions.json
+            fi
+          done < /tmp/deletable_ids.txt
+
+      - name: Delete old images
+        if: steps.identify-deletions.outputs.DELETE_COUNT != '0'
+        run: |
+          IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          DELETED_COUNT=0
+          FAILED_COUNT=0
+
+          while IFS= read -r VERSION_ID; do
+            if [ -n "$VERSION_ID" ]; then
+              echo "Deleting version ID: $VERSION_ID"
+
+              RESPONSE=$(curl -s -w "\n%{http_code}" -X DELETE \
+                -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                -H "Accept: application/vnd.github.v3+json" \
+                "https://api.github.com/users/${{ github.repository_owner }}/packages/container/${{ github.event.repository.name }}/versions/$VERSION_ID")
+
+              HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+
+              if [ "$HTTP_CODE" = "204" ] || [ "$HTTP_CODE" = "200" ]; then
+                echo "✓ Successfully deleted version $VERSION_ID"
+                DELETED_COUNT=$((DELETED_COUNT + 1))
+              else
+                echo "✗ Failed to delete version $VERSION_ID (HTTP $HTTP_CODE)"
+                echo "$RESPONSE" | head -n-1
+                FAILED_COUNT=$((FAILED_COUNT + 1))
+              fi
+
+              # Rate limiting: wait between deletions
+              sleep 1
+            fi
+          done < /tmp/deletable_ids.txt
+
+          echo ""
+          echo "=== Cleanup Complete ==="
+          echo "Successfully deleted: $DELETED_COUNT"
+          echo "Failed: $FAILED_COUNT"
+
+          if [ $FAILED_COUNT -gt 0 ]; then
+            echo "⚠ Some deletions failed. Check logs above for details."
+            exit 1
+          fi
+
+      - name: Cleanup summary
+        if: always()
+        run: |
+          if [ "${{ steps.identify-deletions.outputs.DELETE_COUNT }}" = "0" ]; then
+            echo "✓ No old images found. All images match the retention policy."
+          else
+            echo "✓ Cleanup workflow completed"
+          fi
+
+          echo ""
+          echo "Retention policy:"
+          echo "  - Latest ${{ env.KEEP_LATEST_PRODUCTION }} production/staging images (main-* tags)"
+          echo "  - Feature branch images from the last ${{ env.FEATURE_RETENTION_DAYS }} days"
+          echo "  - 'latest' tag is always preserved"

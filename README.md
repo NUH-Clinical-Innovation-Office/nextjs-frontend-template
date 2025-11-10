@@ -433,6 +433,7 @@ This template includes GitHub Actions workflows for:
 - **Production deployment** (`production-deploy.yml`) - Production deployments with approval gate
 - **Feature branch deployment** (`feature-deploy.yml`) - Automatic preview deployments for feature branches
 - **Feature cleanup** (`feature-cleanup.yml`) - Auto-cleanup when feature branches are deleted
+- **Image cleanup** (`image-cleanup.yml`) - Scheduled cleanup of old container images (weekly on Sundays at 2 AM UTC)
 
 #### Reusable Workflows
 
@@ -461,6 +462,32 @@ The template uses reusable workflows to reduce code duplication and ensure consi
 - Single source of truth for build and Docker processes
 - Easier maintenance and updates across all workflows
 - Consistent behavior across environments (staging, production, feature branches)
+
+#### Container Image Cleanup
+
+The `image-cleanup.yml` workflow automatically manages GitHub Container Registry storage by removing old and unused images:
+
+**Schedule**: Runs weekly on Sundays at 2 AM UTC (configurable via cron, also supports manual trigger via `workflow_dispatch`)
+
+**Retention Policy**:
+- **Production images** (`main-*` tags): Keeps the latest 3 versions, deletes older ones
+- **Feature branch images**: Keeps images from the last 7 days, deletes older ones
+- **`latest` tag**: Always protected, never deleted
+- **Untagged images**: Always deleted immediately
+
+**How it works**:
+1. Fetches all image versions from GitHub Container Registry (with pagination support for >100 images)
+2. Identifies deletable images based on tag patterns and age
+3. Deletes images while respecting the retention policy
+4. Reports summary of deleted vs failed deletions
+
+**Configuration** (in `image-cleanup.yml`):
+```yaml
+KEEP_LATEST_PRODUCTION: 3      # Number of main-* images to retain
+FEATURE_RETENTION_DAYS: 7      # Days to keep feature branch images
+```
+
+This automation prevents registry storage bloat while ensuring recent and production images remain available.
 
 ## Learn More
 
