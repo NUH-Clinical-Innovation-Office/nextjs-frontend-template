@@ -52,6 +52,7 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 - **Commitlint** for conventional commit messages
 - **Depcheck** for dependency management
 - **TypeScript strict mode** with type checking
+- **Claude Code** integration with CLAUDE.md for AI-assisted development
 
 ### Testing
 
@@ -327,6 +328,33 @@ This template includes security headers configured in `next.config.ts` to protec
 
 - [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) - Configure and validate environment variables with Zod
 
+### AI Development
+
+- [CLAUDE.md](CLAUDE.md) - Project guidance for Claude Code AI assistant with essential commands, architecture patterns, and CI/CD infrastructure details
+
+#### Claude Code Agents
+
+This template includes 8 specialized AI agents in `.claude/agents/` that automate common development workflows:
+
+**Development Workflow:**
+
+- **product-manager** - Breaks down feature requests into actionable user stories with acceptance criteria, creating structured FEATURE.md files
+- **feature-implementor** - Systematically implements features from FEATURE.md specifications following project conventions
+- **frontend-test-writer** - Writes comprehensive unit tests for React components and business logic using Vitest and React Testing Library
+
+**Code Quality:**
+
+- **code-reviewer** - Reviews code changes for quality, standards compliance, and best practices, generating detailed CODE_REVIEW.md reports
+- **code-review-fixer** - Addresses issues documented in CODE_REVIEW.md files with surgical precision
+- **bug-fixer** - Diagnoses and resolves runtime errors, failing tests, and code defects with root cause analysis
+
+**GitHub Integration:**
+
+- **github-pr-creator** - Analyzes commits and creates well-structured pull requests with comprehensive descriptions
+- **github-pr-fixer** - Addresses PR feedback and review comments, creating PR_FIXES.md checklists for tracking
+
+All agents follow project standards from CLAUDE.md including atomic design patterns, TypeScript strict mode, Biome formatting, and Next.js best practices.
+
 ### Kubernetes Deployment
 
 The Helm chart in `helm/nextjs-app/` includes production-ready Kubernetes resources:
@@ -450,6 +478,7 @@ To learn more about the technologies used:
 - [Helm](https://helm.sh/docs) - Kubernetes package manager
 - [GitHub Actions](https://docs.github.com/en/actions) - CI/CD workflows
 - [Cloudflare](https://developers.cloudflare.com) - CDN and DNS services
+- [Claude Code](https://docs.claude.com/claude-code) - AI-powered development assistant
 
 ## License
 
