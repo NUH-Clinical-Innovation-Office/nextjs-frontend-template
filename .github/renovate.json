@@ -1,0 +1,67 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:base"],
+  "semanticCommits": "enabled",
+  "packageRules": [
+    {
+      "description": "Automerge minor and patch updates for stable packages (not v0.x)",
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchCurrentVersion": "!/^0/",
+      "automerge": true,
+      "automergeType": "pr",
+      "automergeStrategy": "squash"
+    },
+    {
+      "description": "Automerge TypeScript type definitions after CI passes",
+      "matchPackagePatterns": ["^@types/"],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Group all Next.js packages together",
+      "matchPackagePatterns": ["^next", "^@next/"],
+      "groupName": "Next.js"
+    },
+    {
+      "description": "Group all React packages together",
+      "matchPackagePatterns": ["^react", "^@types/react"],
+      "groupName": "React"
+    },
+    {
+      "description": "Group all Radix UI packages together",
+      "matchPackagePatterns": ["^@radix-ui/"],
+      "groupName": "Radix UI"
+    },
+    {
+      "description": "Group all testing packages together",
+      "matchPackagePatterns": ["vitest", "^@testing-library/", "^@vitest/", "jsdom"],
+      "groupName": "Testing"
+    },
+    {
+      "description": "Schedule dependencies updates weekly",
+      "matchDepTypes": ["dependencies", "devDependencies"],
+      "extends": ["schedule:weekly"]
+    },
+    {
+      "description": "Separate major updates for review",
+      "matchUpdateTypes": ["major"],
+      "labels": ["dependencies", "major-update"],
+      "automerge": false
+    }
+  ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on Monday"]
+  },
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 2,
+  "labels": ["dependencies"],
+  "assignees": [],
+  "reviewers": [],
+  "timezone": "Asia/Singapore",
+  "requiredStatusChecks": ["build", "lint", "test", "type-check"]
+}
