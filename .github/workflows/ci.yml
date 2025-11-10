@@ -31,14 +31,25 @@ jobs:
       platforms: linux/amd64,linux/arm64
     secrets: inherit
 
-  deploy-staging:
-    name: Deploy to Staging
+  security-scan:
+    name: Security Scan
     needs: docker
     permissions:
       contents: read
       packages: read
-      deployments: write
       security-events: write
+    uses: ./.github/workflows/reusable-security-scan.yml
+    with:
+      image_tag: ${{ needs.docker.outputs.image_tag }}
+    secrets: inherit
+
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [docker, security-scan]
+    permissions:
+      contents: read
+      packages: read
+      deployments: write
     uses: ./.github/workflows/staging-deploy.yml
     with:
       image_tag: ${{ needs.docker.outputs.image_tag }}
@@ -46,12 +57,11 @@ jobs:
 
   deploy-production:
     name: Deploy to Production
-    needs: docker
+    needs: [docker, security-scan]
     permissions:
       contents: read
       packages: read
       deployments: write
-      security-events: write
     uses: ./.github/workflows/production-deploy.yml
     with:
       image_tag: ${{ needs.docker.outputs.image_tag }}
