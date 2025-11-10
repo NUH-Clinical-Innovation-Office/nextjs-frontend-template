@@ -38,6 +38,7 @@ jobs:
   deploy:
     name: Deploy Feature Branch
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: docker
     permissions:
       contents: read
