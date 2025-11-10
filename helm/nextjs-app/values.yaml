@@ -117,6 +117,12 @@ startupProbe:
   timeoutSeconds: 3
   failureThreshold: 30
 
+# Pod Disruption Budget configuration
+podDisruptionBudget:
+  enabled: false
+  minAvailable: 1
+  # maxUnavailable: 1
+
 # Feature branch configuration
 featureBranch:
   enabled: false

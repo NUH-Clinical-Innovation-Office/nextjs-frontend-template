@@ -17,6 +17,7 @@ jobs:
   setup:
     name: Setup & Cache Dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       cache_hit: ${{ steps.cache-node-modules.outputs.cache-hit }}
     steps:
@@ -43,6 +44,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     steps:
       - name: Checkout code
@@ -65,6 +67,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     steps:
       - name: Checkout code
@@ -87,6 +90,7 @@ jobs:
   depcheck:
     name: Dependency Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     steps:
       - name: Checkout code
@@ -109,6 +113,7 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     needs: setup
     permissions:
       contents: read

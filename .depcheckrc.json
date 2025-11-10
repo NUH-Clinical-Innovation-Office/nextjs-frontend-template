@@ -12,7 +12,8 @@
     "husky",
     "jsdom",
     "tailwindcss",
-    "tw-animate-css"
+    "tw-animate-css",
+    "@vitest/coverage-v8"
   ],
   "ignore-patterns": ["dist", ".next", "coverage", "node_modules"]
 }
