@@ -1,6 +1,13 @@
 # Feature branch environment values (template)
 replicaCount: 1
 
+# Common labels for cost allocation and resource organization
+commonLabels:
+  team: "frontend-team"
+  project: "nextjs-frontend-template"
+  cost-center: "engineering"
+  environment: "development"
+
 image:
   repository: nextjs-frontend-template
   pullPolicy: IfNotPresent

@@ -375,6 +375,27 @@ The Helm chart in `helm/nextjs-app/` includes production-ready Kubernetes resour
 - `values-staging.yaml` - Staging environment settings
 - `values-production.yaml` - Production environment settings
 
+**Cost Allocation Labels:**
+
+All environment configurations include `commonLabels` for cloud cost segregation and resource organization:
+
+```yaml
+commonLabels:
+  team: "frontend-team"
+  project: "nextjs-frontend-template"
+  cost-center: "engineering"
+  environment: "production|staging|development"
+```
+
+These Kubernetes labels enable:
+
+- **Internal cost tracking**: Tools like Kubecost and OpenCost map pod-level resource usage to costs
+- **Resource organization**: Filter and group resources by team, project, or environment
+- **Compliance & governance**: Track resource ownership and enforce policies
+- **Cloud cost allocation**: When combined with cloud provider resource tags (EKS nodes, EBS volumes), enables cost breakdown in AWS Cost Explorer, GCP Billing, or Azure Cost Management
+
+**Note**: For complete AWS cost visibility, you must also tag your infrastructure resources (EKS node groups, volumes, load balancers) with matching tags in your Terraform/CloudFormation configuration.
+
 **High Availability with PodDisruptionBudget:**
 
 PodDisruptionBudget (PDB) prevents Kubernetes from disrupting too many pods during voluntary operations like node drains, rolling updates, or cluster scaling.
@@ -470,18 +491,21 @@ The `image-cleanup.yml` workflow automatically manages GitHub Container Registry
 **Schedule**: Runs weekly on Sundays at 2 AM UTC (configurable via cron, also supports manual trigger via `workflow_dispatch`)
 
 **Retention Policy**:
+
 - **Production images** (`main-*` tags): Keeps the latest 3 versions, deletes older ones
 - **Feature branch images**: Keeps images from the last 7 days, deletes older ones
 - **`latest` tag**: Always protected, never deleted
 - **Untagged images**: Always deleted immediately
 
 **How it works**:
+
 1. Fetches all image versions from GitHub Container Registry (with pagination support for >100 images)
 2. Identifies deletable images based on tag patterns and age
 3. Deletes images while respecting the retention policy
 4. Reports summary of deleted vs failed deletions
 
 **Configuration** (in `image-cleanup.yml`):
+
 ```yaml
 KEEP_LATEST_PRODUCTION: 3      # Number of main-* images to retain
 FEATURE_RETENTION_DAYS: 7      # Days to keep feature branch images

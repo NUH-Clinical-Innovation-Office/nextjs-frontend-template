@@ -1,6 +1,13 @@
 # Production environment values
 replicaCount: 2
 
+# Common labels for cost allocation and resource organization
+commonLabels:
+  team: "frontend-team"
+  project: "nextjs-frontend-template"
+  cost-center: "engineering"
+  environment: "production"
+
 image:
   repository: nextjs-frontend-template
   pullPolicy: Always

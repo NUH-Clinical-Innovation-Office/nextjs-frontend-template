@@ -12,6 +12,13 @@ imagePullSecrets:
 nameOverride: ""
 fullnameOverride: ""
 
+# Common labels for cost allocation and resource organization
+commonLabels: {}
+  # team: "frontend-team"
+  # project: "nextjs-frontend-template"
+  # cost-center: "engineering"
+  # environment: "production"
+
 serviceAccount:
   create: true
   annotations: {}
