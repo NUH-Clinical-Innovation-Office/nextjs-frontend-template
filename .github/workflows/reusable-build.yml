@@ -136,12 +136,6 @@ jobs:
             --scanners vuln,misconfig \
             --skip-dirs docs
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-results.sarif"
-
       - name: Run Trivy scan with table output
         run: |
           trivy fs . \

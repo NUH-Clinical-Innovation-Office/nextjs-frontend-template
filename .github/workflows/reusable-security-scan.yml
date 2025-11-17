@@ -61,12 +61,6 @@ jobs:
           severity: "CRITICAL,HIGH"
           scan-type: "image"
 
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-image-results.sarif"
-
       - name: Run Trivy vulnerability scanner (Table output)
         uses: aquasecurity/trivy-action@0.28.0
         with:
