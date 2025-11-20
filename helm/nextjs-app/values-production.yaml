@@ -1,5 +1,5 @@
 # Production environment values
-replicaCount: 2
+replicaCount: 1
 
 # Common labels for cost allocation and resource organization
 commonLabels:
@@ -56,8 +56,8 @@ ingress:
 
 autoscaling:
   enabled: true
-  minReplicas: 2
-  maxReplicas: 10
+  minReplicas: 1
+  maxReplicas: 5
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
 
