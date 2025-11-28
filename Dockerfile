@@ -1,5 +1,5 @@
 # Build arguments for versioning and metadata
-ARG NODE_VERSION=24.10.0
+ARG NODE_VERSION=24
 
 # Stage 1: Builder
 FROM node:${NODE_VERSION}-alpine AS builder

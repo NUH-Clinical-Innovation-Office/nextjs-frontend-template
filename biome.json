@@ -7,7 +7,8 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "maxSize": 5242880
+    "maxSize": 5242880,
+    "includes": ["**", "!settings.local.json"]
   },
   "formatter": {
     "enabled": true,
