@@ -7,7 +7,7 @@ on:
         description: "Node.js version to use"
         required: false
         type: string
-        default: "24.10.0"
+        default: "24.11.1"
       registry:
         description: "Container registry"
         required: false

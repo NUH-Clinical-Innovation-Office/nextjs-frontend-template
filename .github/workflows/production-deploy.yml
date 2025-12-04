@@ -9,7 +9,7 @@ on:
         type: string
 
 env:
-  NODE_VERSION: "24.10.0"
+  NODE_VERSION: "24.11.1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
   PRODUCTION_PORT: 30001

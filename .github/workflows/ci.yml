@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: "24.10.0"
+  NODE_VERSION: "24.11.1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
@@ -17,7 +17,7 @@ jobs:
       security-events: write
     uses: ./.github/workflows/reusable-build.yml
     with:
-      node_version: "24.10.0"
+      node_version: "24.11.1"
 
   docker:
     name: Build & Push Docker Image
@@ -27,7 +27,7 @@ jobs:
       packages: write
     uses: ./.github/workflows/reusable-docker.yml
     with:
-      node_version: "24.10.0"
+      node_version: "24.11.1"
       platforms: linux/amd64,linux/arm64
     secrets: inherit
 

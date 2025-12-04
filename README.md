@@ -83,7 +83,7 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 
 Follow the setup guide at [NUH Clinical Innovation Office Setup](https://github.com/NUH-Clinical-Innovation-Office/setup) to install:
 
-- Node.js >= 24.10.0
+- Node.js >= 24.11.1
 - npm, yarn, pnpm, or bun
 
 ### Initial Setup for New Users
@@ -465,7 +465,7 @@ The template uses reusable workflows to reduce code duplication and ensure consi
 - Runs setup, lint, test, depcheck, and Trivy security scanning in parallel
 - Caches `node_modules` for faster builds
 - Uploads security scan results to GitHub Security tab
-- Configurable Node.js version (default: 24.10.0)
+- Configurable Node.js version (default: 24.11.1)
 - Used by: `ci.yml`, `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
 
 **`reusable-docker.yml`** - Docker image build and push workflow
