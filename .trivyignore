@@ -1,0 +1,9 @@
+# Trivy ignore file
+# This file contains CVEs that are acknowledged and accepted
+
+# CVE-2025-64756: OS Command Injection in glob package (bundled with npm in node:24-alpine)
+# Severity: HIGH (CVSS 7.5)
+# Status: Waiting for upstream Node.js to update bundled npm dependencies
+# Date Added: 2025-12-04
+# Affects: Base image (node:24-alpine) npm's glob package
+CVE-2025-64756
