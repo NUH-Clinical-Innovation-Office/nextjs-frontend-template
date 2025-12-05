@@ -75,11 +75,20 @@ jobs:
           echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
           chmod 600 ~/.kube/config
 
-      - name: Ensure namespace exists
+      - name: Copy GHCR secret to production namespace
         run: |
           # Create namespace if it doesn't exist
           kubectl create namespace ${{ github.event.repository.name }} --dry-run=client -o yaml | kubectl apply -f -
-          echo "✓ Namespace ${{ github.event.repository.name }} ready"
+
+          # Copy ghcr-secret from main namespace to production namespace only if it doesn't exist
+          if ! kubectl get secret ghcr-secret -n ${{ github.event.repository.name }} &>/dev/null; then
+            kubectl get secret ghcr-secret -n nextjs-frontend-template -o yaml | \
+              sed "s/namespace: nextjs-frontend-template/namespace: ${{ github.event.repository.name }}/" | \
+              kubectl apply -f -
+            echo "✓ Copied ghcr-secret to ${{ github.event.repository.name }}"
+          else
+            echo "✓ Secret ghcr-secret already exists in ${{ github.event.repository.name }}"
+          fi
 
       - name: Deploy with Helm
         run: |

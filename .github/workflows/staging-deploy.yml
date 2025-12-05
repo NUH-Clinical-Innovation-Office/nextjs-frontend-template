@@ -77,17 +77,19 @@ jobs:
 
       - name: Copy GHCR secret to staging namespace
         run: |
+          NAMESPACE="${{ github.event.repository.name }}-staging"
+
           # Create namespace if it doesn't exist
-          kubectl create namespace ${{ github.event.repository.name }}-staging --dry-run=client -o yaml | kubectl apply -f -
+          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
 
           # Copy ghcr-secret from main namespace to staging namespace only if it doesn't exist
-          if ! kubectl get secret ghcr-secret -n ${{ github.event.repository.name }}-staging &>/dev/null; then
+          if ! kubectl get secret ghcr-secret -n "$NAMESPACE" &>/dev/null; then
             kubectl get secret ghcr-secret -n ${{ github.event.repository.name }} -o yaml | \
-              sed "s/namespace: ${{ github.event.repository.name }}/namespace: ${{ github.event.repository.name }}-staging/" | \
+              sed "s/namespace: ${{ github.event.repository.name }}/namespace: $NAMESPACE/" | \
               kubectl apply -f -
-            echo "✓ Copied ghcr-secret to ${{ github.event.repository.name }}-staging"
+            echo "✓ Copied ghcr-secret to $NAMESPACE"
           else
-            echo "✓ Secret ghcr-secret already exists in ${{ github.event.repository.name }}-staging"
+            echo "✓ Secret ghcr-secret already exists in $NAMESPACE"
           fi
 
       - name: Deploy with Helm
