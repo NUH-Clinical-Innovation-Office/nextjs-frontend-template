@@ -61,3 +61,13 @@ Create the name of the service account to use
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
 {{- end }}
+
+{{/*
+Validate image tag format - must contain commit SHA
+*/}}
+{{- define "nextjs-app.validateImageTag" -}}
+{{- $tag := .Values.image.tag | default .Chart.AppVersion -}}
+{{- if not (regexMatch "^.+-[0-9a-f]{40}$" $tag) -}}
+{{- fail (printf "Invalid image tag format: '%s'. Expected format: {branch}-{40-char-commit-sha} (e.g., main-592c810961d06c9969c8504263e1ffb0b964685e)" $tag) -}}
+{{- end -}}
+{{- end -}}
