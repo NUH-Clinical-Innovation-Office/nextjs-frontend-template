@@ -86,9 +86,40 @@ Follow the setup guide at [NUH Clinical Innovation Office Setup](https://github.
 - Node.js >= 24.11.1
 - npm, yarn, pnpm, or bun
 
-### Initial Setup for New Users
+### Quick Setup (Recommended)
 
-After cloning this repository:
+For new projects, use the automated setup script to configure your project:
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+The setup script will:
+- Prompt for your project name (defaults to current directory name)
+- Configure staging and production NodePort values (30000-32767 range)
+- Update all configuration files with your project name
+- Update port configurations in Helm values files
+- Display a configuration summary before making changes
+
+**What gets updated:**
+- `package.json` - Project name
+- `Dockerfile` - GitHub repository URL
+- `helm/nextjs-app/values*.yaml` - Project name and ports
+- `README.md` - Project name references
+- `docs/**/*.md` - Documentation files
+- `docs/scripts/setup-vault-environments.sh` - Vault setup script
+
+**Requirements:**
+- Project name must contain only lowercase letters, numbers, and hyphens
+- Staging and production ports must be different
+- Ports must be in the NodePort range (30000-32767)
+
+After running the setup script, review the changes before committing.
+
+### Manual Setup
+
+If you prefer manual configuration, follow these steps after cloning this repository:
 
 1. Install dependencies:
 
@@ -382,7 +413,7 @@ All environment configurations include `commonLabels` for cloud cost segregation
 ```yaml
 commonLabels:
   team: "frontend-team"
-  project: "nextjs-frontend-template"
+  project: "pre-consult"
   cost-center: "engineering"
   environment: "production|staging|development"
 ```
