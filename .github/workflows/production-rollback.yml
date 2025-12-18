@@ -2,11 +2,6 @@ name: Production Rollback
 
 on:
   workflow_dispatch:
-    inputs:
-      revision:
-        description: "Helm revision number to rollback to (leave empty for previous revision)"
-        required: false
-        type: string
 
 env:
   NODE_VERSION: "24.12.0"
@@ -24,6 +19,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Validate last deployment was successful
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Checking if there's a successful production deployment..."
+
+          # Get the last production deployment workflow run
+          LAST_DEPLOY=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "/repos/${{ github.repository }}/actions/workflows/ci.yml/runs?status=success&per_page=1" \
+            --jq '.workflow_runs[0]')
+
+          if [ -z "$LAST_DEPLOY" ] || [ "$LAST_DEPLOY" = "null" ]; then
+            echo "✗ ERROR: No successful CI/CD workflow run found"
+            echo "Cannot rollback when there are no successful deployments."
+            exit 1
+          fi
+
+          CONCLUSION=$(echo "$LAST_DEPLOY" | jq -r '.conclusion')
+
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "✗ ERROR: Last CI/CD workflow did not complete successfully"
+            echo "Conclusion: $CONCLUSION"
+            exit 1
+          fi
+
+          echo "✓ Found successful deployment to rollback from"
 
       - name: Validate required secrets
         run: |
@@ -74,38 +98,13 @@ jobs:
           echo "Current revision: $CURRENT_REVISION"
 
           # Check if there's a previous revision to rollback to
-          if [ "$CURRENT_REVISION" -eq 1 ] && [ -z "${{ inputs.revision }}" ]; then
+          if [ "$CURRENT_REVISION" -eq 1 ]; then
             echo "✗ ERROR: Cannot rollback - currently at revision 1 (first deployment)"
             echo "There is no previous revision to rollback to."
             exit 1
           fi
 
-          # If specific revision is provided, validate it exists and is not the current one
-          if [ -n "${{ inputs.revision }}" ]; then
-            TARGET_REVISION="${{ inputs.revision }}"
-
-            if [ "$TARGET_REVISION" -eq "$CURRENT_REVISION" ]; then
-              echo "✗ ERROR: Target revision $TARGET_REVISION is the same as current revision"
-              echo "Cannot rollback to the same revision."
-              exit 1
-            fi
-
-            if [ "$TARGET_REVISION" -gt "$CURRENT_REVISION" ]; then
-              echo "✗ ERROR: Target revision $TARGET_REVISION is higher than current revision $CURRENT_REVISION"
-              echo "Cannot rollback to a future revision."
-              exit 1
-            fi
-
-            # Check if target revision exists in history
-            if ! helm history "$RELEASE_NAME" -n "$NAMESPACE" -o json | jq -e '.[] | select(.revision=='$TARGET_REVISION')' >/dev/null; then
-              echo "✗ ERROR: Revision $TARGET_REVISION not found in deployment history"
-              echo "Available revisions:"
-              helm history "$RELEASE_NAME" -n "$NAMESPACE"
-              exit 1
-            fi
-          fi
-
-          echo "✓ Rollback validation passed"
+          echo "✓ Rollback validation passed - will rollback from revision $CURRENT_REVISION to revision $((CURRENT_REVISION - 1))"
 
       - name: Show deployment history
         run: |
@@ -117,13 +116,8 @@ jobs:
           NAMESPACE="${{ github.event.repository.name }}"
           RELEASE_NAME="nextjs-app"
 
-          if [ -n "${{ inputs.revision }}" ]; then
-            echo "Rolling back to revision ${{ inputs.revision }}"
-            helm rollback "$RELEASE_NAME" ${{ inputs.revision }} -n "$NAMESPACE" --wait --timeout 10m
-          else
-            echo "Rolling back to previous revision"
-            helm rollback "$RELEASE_NAME" -n "$NAMESPACE" --wait --timeout 10m
-          fi
+          echo "Rolling back to previous revision"
+          helm rollback "$RELEASE_NAME" -n "$NAMESPACE" --wait --timeout 10m
 
       - name: Verify rollback
         run: |
