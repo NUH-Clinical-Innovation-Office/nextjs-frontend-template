@@ -131,7 +131,7 @@ npm run depcheck      # Check for unused dependencies
 
 - Strict mode enabled
 - Path alias: `@/*` → `src/*`
-- Node version: >=24.11.1
+- Node version: >=24.12.0
 
 ### Testing (Vitest)
 
