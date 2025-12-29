@@ -50,7 +50,7 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 - **Vitest** for unit testing with React Testing Library
 - **Husky** for git hooks
 - **Commitlint** for conventional commit messages
-- **Depcheck** for dependency management
+- **Knip** for dependency management
 - **TypeScript strict mode** with type checking
 - **Claude Code** integration with CLAUDE.md for AI-assisted development
 
@@ -96,6 +96,7 @@ chmod +x setup.sh
 ```
 
 The setup script will:
+
 - Prompt for your project name (defaults to current directory name)
 - Configure staging and production NodePort values (30000-32767 range)
 - Update all configuration files with your project name
@@ -103,6 +104,7 @@ The setup script will:
 - Display a configuration summary before making changes
 
 **What gets updated:**
+
 - `package.json` - Project name
 - `Dockerfile` - GitHub repository URL
 - `helm/nextjs-app/values*.yaml` - Project name and ports
@@ -111,6 +113,7 @@ The setup script will:
 - `docs/scripts/setup-vault-environments.sh` - Vault setup script
 
 **Requirements:**
+
 - Project name must contain only lowercase letters, numbers, and hyphens
 - Staging and production ports must be different
 - Ports must be in the NodePort range (30000-32767)
@@ -129,7 +132,7 @@ npm install
 
 This will automatically set up Husky git hooks via the `prepare` script.
 
-2. Configure environment variables:
+1. Configure environment variables:
 
 ```bash
 cp .env.example .env.local
@@ -171,7 +174,7 @@ npm run test:ui         # Open Vitest UI for interactive testing
 npm run lint            # Check code with Biome
 npm run format          # Format code with Biome
 npm run type-check      # Run TypeScript type checking
-npm run depcheck        # Check for unused dependencies
+npm run knip            # Check for unused dependencies
 
 # Security Scanning
 npm run security-scan         # Run Trivy security scans on all project assets
@@ -493,7 +496,7 @@ The template uses reusable workflows to reduce code duplication and ensure consi
 
 **`reusable-build.yml`** - Shared build, test, and quality checks workflow
 
-- Runs setup, lint, test, depcheck, and Trivy security scanning in parallel
+- Runs setup, lint, test, knip, and Trivy security scanning in parallel
 - Caches `node_modules` for faster builds
 - Uploads security scan results to GitHub Security tab
 - Configurable Node.js version (default: 24.12.0)

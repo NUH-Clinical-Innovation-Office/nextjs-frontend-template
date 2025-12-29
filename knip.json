@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "ignoreExportsUsedInFile": {
+    "interface": true,
+    "type": true
+  },
+  "tags": ["-lintignore"],
+  "ignoreDependencies": ["@commitlint/types", "postcss"],
+  "ignoreBinaries": ["kubectl", "trivy"],
+  "ignore": ["src/components/ui/**"],
+  "entry": ["src/lib/env.ts!"]
+}

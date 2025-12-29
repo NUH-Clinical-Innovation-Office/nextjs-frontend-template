@@ -63,5 +63,8 @@
   // ShellCheck
   "shellcheck.ignorePatterns": {
     "**/.env*": true
-  }
+  },
+
+  // cSpell
+  "cSpell.words": ["knip", "lintignore"]
 }

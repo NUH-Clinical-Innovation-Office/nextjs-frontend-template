@@ -32,7 +32,7 @@ npm run test:coverage   # Generate coverage report
 npm run lint          # Check code with Biome
 npm run format        # Format code with Biome
 npm run type-check    # Run TypeScript type checking
-npm run depcheck      # Check for unused dependencies
+npm run knip          # Check for unused dependencies
 ```
 
 ### Git Hooks (via Husky)

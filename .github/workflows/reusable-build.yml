@@ -87,7 +87,7 @@ jobs:
       - name: Run tests
         run: npm run test
 
-  depcheck:
+  knip:
     name: Dependency Check
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -107,8 +107,8 @@ jobs:
           path: node_modules
           key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
 
-      - name: Run depcheck
-        run: npm run depcheck
+      - name: Run knip
+        run: npm run knip
 
   security-scan:
     name: Security Scan
