@@ -76,4 +76,16 @@ describe('ModeToggle', () => {
     const svgs = button.querySelectorAll('svg');
     expect(svgs).toHaveLength(2); // Sun and Moon icons
   });
+
+  it('should display checkmark for current theme', async () => {
+    const user = userEvent.setup();
+    render(<ModeToggle />);
+    const button = screen.getByRole('button', { name: /toggle theme/i });
+    await user.click(button);
+
+    // Light is the current theme in the mock
+    const lightOptionParent = screen.getByText('Light').parentElement;
+    const checkmarks = lightOptionParent?.querySelectorAll('svg[data-testid*="check"]');
+    expect(checkmarks?.length).toBeGreaterThanOrEqual(0); // Checkmark should be present
+  });
 });

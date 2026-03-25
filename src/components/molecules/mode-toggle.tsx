@@ -1,6 +1,6 @@
 'use client';
 
-import { Moon, Sun } from 'lucide-react';
+import { Check, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { setTheme, theme } = useTheme();
 
   return (
     <DropdownMenu>
@@ -24,9 +24,27 @@ export function ModeToggle() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>Light</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>Dark</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>System</DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setTheme('light')}
+          className={`flex items-center justify-between ${theme === 'light' ? 'bg-accent' : ''}`}
+        >
+          <span>Light</span>
+          {theme === 'light' && <Check className="h-4 w-4" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setTheme('dark')}
+          className={`flex items-center justify-between ${theme === 'dark' ? 'bg-accent' : ''}`}
+        >
+          <span>Dark</span>
+          {theme === 'dark' && <Check className="h-4 w-4" />}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => setTheme('system')}
+          className={`flex items-center justify-between ${theme === 'system' ? 'bg-accent' : ''}`}
+        >
+          <span>System</span>
+          {theme === 'system' && <Check className="h-4 w-4" />}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
