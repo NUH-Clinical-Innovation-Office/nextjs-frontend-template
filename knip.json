@@ -6,7 +6,7 @@
   },
   "tags": ["-lintignore"],
   "ignoreDependencies": ["@commitlint/types", "postcss"],
-  "ignoreBinaries": ["kubectl", "trivy"],
+  "ignoreBinaries": ["trivy"],
   "ignore": ["src/components/ui/**"],
   "entry": ["src/lib/env.ts!"]
 }
