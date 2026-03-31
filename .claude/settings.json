@@ -4,8 +4,6 @@
     "deny": [],
     "ask": []
   },
-  "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["shadcn"],
   "hooks": {
     "PostToolUse": [
       {
