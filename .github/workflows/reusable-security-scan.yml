@@ -53,7 +53,7 @@ jobs:
         run: docker pull ${{ inputs.registry }}/${{ steps.image-name.outputs.IMAGE_NAME_LOWER }}:${{ inputs.image_tag }}
 
       - name: Run Trivy vulnerability scanner (SARIF)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ inputs.registry }}/${{ steps.image-name.outputs.IMAGE_NAME_LOWER }}:${{ inputs.image_tag }}
           format: "sarif"
@@ -62,7 +62,7 @@ jobs:
           scan-type: "image"
 
       - name: Run Trivy vulnerability scanner (Table output)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.35.0
         with:
           image-ref: ${{ inputs.registry }}/${{ steps.image-name.outputs.IMAGE_NAME_LOWER }}:${{ inputs.image_tag }}
           format: "table"
