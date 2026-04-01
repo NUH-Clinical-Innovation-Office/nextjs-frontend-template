@@ -131,7 +131,7 @@ npm run knip          # Check for unused dependencies
 
 - Strict mode enabled
 - Path alias: `@/*` → `src/*`
-- Node version: >=24.12.0
+- Node version: >=24.14.1
 
 ### Testing (Vitest)
 

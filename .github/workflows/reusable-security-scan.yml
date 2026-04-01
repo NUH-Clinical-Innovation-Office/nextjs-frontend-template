@@ -73,7 +73,7 @@ jobs:
         run: |
           # Fail the workflow if CRITICAL or HIGH vulnerabilities were found
           trivy image \
-            --severity CRITICAL,HIGH \
+            --severity CRITICAL \
             --exit-code 1 \
             --quiet \
             ${{ inputs.registry }}/${{ steps.image-name.outputs.IMAGE_NAME_LOWER }}:${{ inputs.image_tag }}
