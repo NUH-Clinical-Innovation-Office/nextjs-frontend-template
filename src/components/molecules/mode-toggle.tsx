@@ -1,51 +1,63 @@
 'use client';
 
-import { Check, Moon, Sun } from 'lucide-react';
+import { Switch } from '@radix-ui/react-switch';
+import { motion } from 'framer-motion';
+import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-
-import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { useEffect, useState } from 'react';
+import { cn } from '@/lib/utils';
 
 export function ModeToggle() {
-  const { setTheme, theme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) {
+    return <div className="h-8 w-16 rounded-full border bg-muted" />;
+  }
+
+  const isDark = resolvedTheme === 'dark';
+
+  function toggle() {
+    setTheme(isDark ? 'light' : 'dark');
+  }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem
-          onClick={() => setTheme('light')}
-          className={`flex items-center justify-between ${theme === 'light' ? 'bg-accent' : ''}`}
-        >
-          <span>Light</span>
-          {theme === 'light' && <Check className="h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setTheme('dark')}
-          className={`flex items-center justify-between ${theme === 'dark' ? 'bg-accent' : ''}`}
-        >
-          <span>Dark</span>
-          {theme === 'dark' && <Check className="h-4 w-4" />}
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => setTheme('system')}
-          className={`flex items-center justify-between ${theme === 'system' ? 'bg-accent' : ''}`}
-        >
-          <span>System</span>
-          {theme === 'system' && <Check className="h-4 w-4" />}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Switch
+      checked={isDark}
+      onCheckedChange={toggle}
+      aria-label="Toggle theme"
+      className={cn(
+        'relative flex h-8 w-14 cursor-pointer items-center rounded-full border bg-muted p-1',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      )}
+      data-slot="switch"
+    >
+      {/* Sun icon - centered on left thumb position */}
+      <Sun
+        data-testid="sun-icon"
+        className={cn(
+          'absolute z-10 h-4 w-4 transition-opacity',
+          'left-2',
+          isDark ? 'opacity-40' : 'opacity-100',
+        )}
+      />
+      {/* Moon icon - centered on right thumb position */}
+      <Moon
+        data-testid="moon-icon"
+        className={cn(
+          'absolute z-10 h-4 w-4 transition-opacity',
+          'left-8',
+          isDark ? 'opacity-100' : 'opacity-40',
+        )}
+      />
+      {/* Sliding thumb indicator - animated with framer-motion */}
+      <motion.div
+        animate={{ x: isDark ? 24 : 0 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+        className="absolute z-0 h-6 w-6 rounded-full bg-background shadow-sm"
+      />
+    </Switch>
   );
 }

@@ -1,91 +1,79 @@
-import { screen } from '@testing-library/dom';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ModeToggle } from './mode-toggle';
 
-// Mock next-themes
 const mockSetTheme = vi.fn();
+let mockResolvedTheme = 'light';
+
 vi.mock('next-themes', () => ({
   useTheme: () => ({
+    resolvedTheme: mockResolvedTheme,
     setTheme: mockSetTheme,
-    theme: 'light',
   }),
 }));
 
+beforeEach(() => {
+  mockSetTheme.mockClear();
+  mockResolvedTheme = 'light';
+});
+
 describe('ModeToggle', () => {
-  it('should render theme toggle button', () => {
+  it('renders the toggle as a switch with aria-label', () => {
     render(<ModeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-    expect(button).toBeInTheDocument();
+    const toggle = screen.getByRole('switch', { name: /toggle theme/i });
+    expect(toggle).toBeInTheDocument();
   });
 
-  it('should open dropdown menu when clicked', async () => {
-    const user = userEvent.setup();
+  it('renders Sun and Moon icons', () => {
     render(<ModeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-    await user.click(button);
-
-    // Check if menu items are visible
-    expect(await screen.findByText('Light')).toBeInTheDocument();
-    expect(screen.getByText('Dark')).toBeInTheDocument();
-    expect(screen.getByText('System')).toBeInTheDocument();
+    const sun = screen.getByTestId('sun-icon');
+    const moon = screen.getByTestId('moon-icon');
+    expect(sun).toBeInTheDocument();
+    expect(moon).toBeInTheDocument();
   });
 
-  it('should call setTheme with "light" when Light is clicked', async () => {
-    const user = userEvent.setup();
+  it('has aria-checked=false when light mode is active', () => {
     render(<ModeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-    await user.click(button);
-
-    const lightOption = await screen.findByText('Light');
-    await user.click(lightOption);
-
-    expect(mockSetTheme).toHaveBeenCalledWith('light');
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'false');
   });
 
-  it('should call setTheme with "dark" when Dark is clicked', async () => {
+  it('has aria-checked=true when dark mode is active', () => {
+    mockResolvedTheme = 'dark';
+    render(<ModeToggle />);
+    expect(screen.getByRole('switch')).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('clicking calls setTheme("dark") when light is active', async () => {
     const user = userEvent.setup();
     render(<ModeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-    await user.click(button);
-
-    const darkOption = await screen.findByText('Dark');
-    await user.click(darkOption);
-
+    await user.click(screen.getByRole('switch'));
     expect(mockSetTheme).toHaveBeenCalledWith('dark');
   });
 
-  it('should call setTheme with "system" when System is clicked', async () => {
+  it('clicking calls setTheme("light") when dark is active', async () => {
+    mockResolvedTheme = 'dark';
     const user = userEvent.setup();
     render(<ModeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-    await user.click(button);
-
-    const systemOption = await screen.findByText('System');
-    await user.click(systemOption);
-
-    expect(mockSetTheme).toHaveBeenCalledWith('system');
+    await user.click(screen.getByRole('switch'));
+    expect(mockSetTheme).toHaveBeenCalledWith('light');
   });
 
-  it('should display sun and moon icons', () => {
-    render(<ModeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-
-    // Check that SVG icons are present in the button
-    const svgs = button.querySelectorAll('svg');
-    expect(svgs).toHaveLength(2); // Sun and Moon icons
-  });
-
-  it('should display checkmark for current theme', async () => {
+  it('toggles theme when pressing Space key', async () => {
     const user = userEvent.setup();
     render(<ModeToggle />);
-    const button = screen.getByRole('button', { name: /toggle theme/i });
-    await user.click(button);
+    const toggle = screen.getByRole('switch', { name: /toggle theme/i });
+    toggle.focus();
+    await user.keyboard(' ');
+    expect(mockSetTheme).toHaveBeenCalledWith('dark');
+  });
 
-    // Light is the current theme in the mock
-    const lightOptionParent = screen.getByText('Light').parentElement;
-    const checkmarks = lightOptionParent?.querySelectorAll('svg[data-testid*="check"]');
-    expect(checkmarks?.length).toBeGreaterThanOrEqual(0); // Checkmark should be present
+  it('toggles theme when pressing Enter key', async () => {
+    const user = userEvent.setup();
+    render(<ModeToggle />);
+    const toggle = screen.getByRole('switch', { name: /toggle theme/i });
+    toggle.focus();
+    await user.keyboard('{Enter}');
+    expect(mockSetTheme).toHaveBeenCalledWith('dark');
   });
 });

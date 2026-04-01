@@ -75,27 +75,21 @@ export function ExternalLink({ href, children, className, ...props }) {
 
 import { Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Switch } from '@radix-ui/react-switch';
 
 export function ModeToggle() {
-  const { setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon">
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          <span className="sr-only">Toggle theme</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => setTheme('light')}>Light</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('dark')}>Dark</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setTheme('system')}>System</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Switch
+      checked={isDark}
+      onCheckedChange={() => setTheme(isDark ? 'light' : 'dark')}
+      aria-label="Toggle theme"
+    >
+      <Sun className="h-4 w-4" />
+      <Moon className="h-4 w-4" />
+    </Switch>
   );
 }
 ```
@@ -147,13 +141,14 @@ export function ModeToggle() {
 - `Button`: Various variants (default, destructive, outline, secondary, ghost, link) and sizes
 - `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`: Content containers
 - `Badge`: Labels and tags
-- `DropdownMenu`: Menus with triggers and items
+- `Switch`: Toggle switches (via Radix UI primitive)
 
 **Example usage**:
 
 ```tsx
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@radix-ui/react-switch';
 
 <Card>
   <CardHeader>
@@ -162,6 +157,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
   </CardHeader>
   <CardContent>
     <Button variant="outline" size="lg">Click me</Button>
+    <Switch checked={enabled} onCheckedChange={setEnabled} />
   </CardContent>
 </Card>
 ```
