@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   experimental: {
     // Optimize package imports for faster builds and smaller bundles
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-dropdown-menu'],
+    optimizePackageImports: ['lucide-react'],
   },
   // biome-ignore lint/suspicious/useAwait: due to nextjs config
   async headers() {

@@ -38,10 +38,10 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 
 ### UI Components
 
-- **shadcn/ui** components (Button, Card, Badge, Dropdown Menu)
+- **shadcn/ui** components (Button, Card, Badge)
 - **Radix UI** primitives for accessible components
 - **Lucide React** icons
-- **next-themes** for dark mode support with theme toggle
+- **next-themes** for dark mode support with pill-style theme toggle
 - Atomic design structure (atoms, molecules, providers)
 
 ### Developer Experience
@@ -257,7 +257,7 @@ The `security-scan` command runs 3 scans:
 2. Dockerfile best practices (`trivy config Dockerfile`)
 3. Helm chart configurations (`trivy config helm/`)
 
-All scans report CRITICAL and HIGH severity vulnerabilities only, filtering out noise from medium/low issues. The `docs/` directory is excluded from scanning as it contains sample/reference Kubernetes configurations with intentionally elevated CI/CD permissions.
+All scans report CRITICAL severity vulnerabilities only, filtering out noise from high/medium/low issues. The `docs/` directory is excluded from scanning as it contains sample/reference Kubernetes configurations with intentionally elevated CI/CD permissions.
 
 **Prerequisites:**
 
@@ -303,10 +303,21 @@ This template includes security headers configured in `next.config.ts` to protec
 - Enables DNS prefetching for external resources
 - Improves performance by resolving domain names before users click links
 
-**Permissions-Policy: camera=(), microphone=(), geolocation=()**
+**Strict-Transport-Security: max-age=31536000; includeSubDomains; preload**
+
+- Enforces HTTPS-only transport for all future requests (1 year duration)
+- Critical for preventing protocol downgrade attacks
+- Applies to all subdomains and included in HSTS preload lists
+
+**Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()**
 
 - Blocks access to sensitive browser APIs (camera, microphone, location)
 - Prevents malicious scripts from accessing these features
+
+**X-Permitted-Cross-Domain-Policies: none**
+
+- Prevents Adobe Flash/PDF from loading cross-domain content
+- Provides defense-in-depth for PDF viewers
 
 **Content-Security-Policy (CSP)**
 
@@ -317,8 +328,13 @@ This template includes security headers configured in `next.config.ts` to protec
 - `img-src 'self' data: https:`: Images from your domain, data URIs, or any HTTPS source
 - `font-src 'self' data:`: Fonts from your domain or data URIs
 - `connect-src 'self'`: API calls only to your domain
+- `object-src 'none'`: Prevents plugin content
+- `base-uri 'self'`: Prevents base tag injection attacks
+- `form-action 'self'`: Prevents form hijacking
+- `frame-ancestors 'none'`: Additional clickjacking protection
+- `upgrade-insecure-requests`: Automatically upgrades HTTP to HTTPS
 
-**Note:** The CSP is intentionally permissive for a template. For production, tighten it by removing `'unsafe-inline'` and `'unsafe-eval'` based on your specific requirements.
+**Note:** The CSP is intentionally permissive for a template. For production, tighten it by removing `'unsafe-inline'` and `'unsafe-eval'` based on your specific requirements. Implement nonce-based CSP for maximum security.
 
 ## Project Structure
 
@@ -351,43 +367,21 @@ This template includes security headers configured in `next.config.ts` to protec
 - [Kubernetes on AWS with Terraform](docs/kubernetes-setup-aws.md) - Production-ready EKS cluster using Terraform IaC
 - [Helm & Kubernetes Guide](docs/helm-kubernetes-setup.md) - Complete guide to Helm package manager and chart deployment
 - [Vault Secrets Management](docs/vault-setup-and-deployment.md) - HashiCorp Vault integration for secure secrets across environments
+- [Cloudflare & GitHub Integration](docs/cloudflare-github-setup.md) - Comprehensive guide to Cloudflare Tunnel setup and GitHub Actions integration
 
 ### Deployment & CI/CD
 
-- [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration
-- [Feature Branch Deployment](docs/FEATURE_BRANCH_DEPLOYMENT.md) - Automatic feature branch deployments with Cloudflare
-- [Workflow Fixes](docs/WORKFLOW_FIXES.md) - CI/CD workflow documentation and fixes
+- [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration, including feature branch deployments and workflow documentation
 
 ### Configuration
 
-- [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) - Configure and validate environment variables with Zod
+- [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration
+- [Environment Variables Guide](.env.example) - Environment variable configuration template with detailed comments
 
 ### AI Development
 
 - [CLAUDE.md](CLAUDE.md) - Project guidance for Claude Code AI assistant with essential commands, architecture patterns, and CI/CD infrastructure details
-
-#### Claude Code Agents
-
-This template includes 8 specialized AI agents in `.claude/agents/` that automate common development workflows:
-
-**Development Workflow:**
-
-- **product-manager** - Breaks down feature requests into actionable user stories with acceptance criteria, creating structured FEATURE.md files
-- **feature-implementor** - Systematically implements features from FEATURE.md specifications following project conventions
-- **frontend-test-writer** - Writes comprehensive unit tests for React components and business logic using Vitest and React Testing Library
-
-**Code Quality:**
-
-- **code-reviewer** - Reviews code changes for quality, standards compliance, and best practices, generating detailed CODE_REVIEW.md reports
-- **code-review-fixer** - Addresses issues documented in CODE_REVIEW.md files with surgical precision
-- **bug-fixer** - Diagnoses and resolves runtime errors, failing tests, and code defects with root cause analysis
-
-**GitHub Integration:**
-
-- **github-pr-creator** - Analyzes commits and creates well-structured pull requests with comprehensive descriptions
-- **github-pr-fixer** - Addresses PR feedback and review comments, creating PR_FIXES.md checklists for tracking
-
-All agents follow project standards from CLAUDE.md including atomic design patterns, TypeScript strict mode, Biome formatting, and Next.js best practices.
+- [Claude Code Superpowers](docs/superpowers/) - Custom AI agent workflows for brainstorming, planning, code review, and implementation tasks
 
 ### Kubernetes Deployment
 
@@ -486,6 +480,8 @@ This template includes GitHub Actions workflows for:
 - **CI Pipeline** (`ci.yml`) - Runs on all pull requests with build, lint, test, and type-check
 - **Staging deployment** (`staging-deploy.yml`) - Automatic deployment to staging environment on merge to main
 - **Production deployment** (`production-deploy.yml`) - Production deployments with approval gate
+- **Production rollback** (`production-rollback.yml`) - Quick rollback to previous production deployment
+- **Staging rollback** (`staging-rollback.yml`) - Quick rollback to previous staging deployment
 - **Feature branch deployment** (`feature-deploy.yml`) - Automatic preview deployments for feature branches
 - **Feature cleanup** (`feature-cleanup.yml`) - Auto-cleanup when feature branches are deleted
 - **Image cleanup** (`image-cleanup.yml`) - Scheduled cleanup of old container images (weekly on Sundays at 2 AM UTC)
@@ -511,6 +507,13 @@ The template uses reusable workflows to reduce code duplication and ensure consi
 - Configurable platforms, registry, and push behavior
 - Outputs: `image_tag`, `image_name` for use in deployment workflows
 - Used by: `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
+
+**`reusable-security-scan.yml`** - Docker image security scanning workflow
+
+- Scans Docker images for CRITICAL and HIGH severity vulnerabilities
+- Generates SARIF output for GitHub Security tab integration
+- Produces table format output for build logs
+- Used by deployment workflows for pre-deployment security validation
 
 **Benefits**:
 
