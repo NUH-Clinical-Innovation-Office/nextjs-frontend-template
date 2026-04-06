@@ -4,10 +4,9 @@ on:
   workflow_call:
     inputs:
       node_version:
-        description: "Node.js version to use"
+        description: "Node.js version to use (extracted from package.json by caller)"
         required: false
         type: string
-        default: "24.14.1"
       registry:
         description: "Container registry"
         required: false

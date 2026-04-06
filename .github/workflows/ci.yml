@@ -5,29 +5,42 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: "24.14.1"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  extract-node-version:
+    name: Extract Node Version from package.json
+    runs-on: ubuntu-latest
+    outputs:
+      node_version: ${{ steps.get-node-version.outputs.node_version }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get Node version from package.json
+        id: get-node-version
+        run: echo "node_version=$(node -p "require('./package.json').engines.node")" >> $GITHUB_OUTPUT
+
   build:
     name: Build & Test
     permissions:
       contents: read
       security-events: write
+    needs: extract-node-version
     uses: ./.github/workflows/reusable-build.yml
     with:
-      node_version: "24.14.1"
+      node_version: ${{ needs.extract-node-version.outputs.node_version }}
 
   docker:
     name: Build & Push Docker Image
-    needs: build
+    needs: [build, extract-node-version]
     permissions:
       contents: read
       packages: write
     uses: ./.github/workflows/reusable-docker.yml
     with:
-      node_version: "24.14.1"
+      node_version: ${{ needs.extract-node-version.outputs.node_version }}
       platforms: linux/amd64,linux/arm64
     secrets: inherit
 
@@ -45,7 +58,7 @@ jobs:
 
   deploy-staging:
     name: Deploy to Staging
-    needs: [docker, security-scan]
+    needs: [docker, security-scan, extract-node-version]
     permissions:
       contents: read
       packages: read
@@ -53,11 +66,12 @@ jobs:
     uses: ./.github/workflows/staging-deploy.yml
     with:
       image_tag: ${{ needs.docker.outputs.image_tag }}
+      node_version: ${{ needs.extract-node-version.outputs.node_version }}
     secrets: inherit
 
   deploy-production:
     name: Deploy to Production
-    needs: [docker, security-scan]
+    needs: [docker, security-scan, extract-node-version]
     permissions:
       contents: read
       packages: read
@@ -65,5 +79,6 @@ jobs:
     uses: ./.github/workflows/production-deploy.yml
     with:
       image_tag: ${{ needs.docker.outputs.image_tag }}
+      node_version: ${{ needs.extract-node-version.outputs.node_version }}
     secrets: inherit
 

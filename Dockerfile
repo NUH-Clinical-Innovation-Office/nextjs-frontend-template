@@ -1,7 +1,7 @@
-# Build arguments for versioning and metadata
-ARG NODE_VERSION=24
-
 # Stage 1: Builder
+# NODE_VERSION is extracted from package.json at build time
+ARG NODE_VERSION
+
 FROM node:${NODE_VERSION}-alpine AS builder
 WORKDIR /app
 
