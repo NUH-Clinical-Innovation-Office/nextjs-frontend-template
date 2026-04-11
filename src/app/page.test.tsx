@@ -6,33 +6,33 @@ import Home from './page';
 describe('Home', () => {
   it('should render the page', () => {
     render(<Home />);
-    expect(screen.getByText(/Get started by editing/i)).toBeInTheDocument();
+    expect(screen.getByText(/National University Hospital/i)).toBeInTheDocument();
   });
 
-  it('should render Next.js logo', () => {
+  it('should render NUH logo', () => {
     render(<Home />);
-    const logo = screen.getByAltText('Next.js logo');
-    expect(logo).toBeInTheDocument();
+    const logos = screen.getAllByAltText('NUH - National University Hospital');
+    expect(logos).toHaveLength(2);
   });
 
-  it('should render deployment link', () => {
+  it('should render visit NUH button', () => {
     render(<Home />);
-    const deployLink = screen.getByRole('link', { name: /Deploy now/i });
-    expect(deployLink).toBeInTheDocument();
-    expect(deployLink).toHaveAttribute('href', expect.stringContaining('vercel.com'));
+    const visitLink = screen.getByRole('link', { name: /Visit NUH/i });
+    expect(visitLink).toBeInTheDocument();
+    expect(visitLink).toHaveAttribute('href', 'https://www.nuh.com.sg');
   });
 
   it('should render docs link', () => {
     render(<Home />);
-    const docsLink = screen.getByRole('link', { name: /Read our docs/i });
+    const docsLink = screen.getByRole('link', { name: /Read the Next.js docs/i });
     expect(docsLink).toBeInTheDocument();
-    expect(docsLink).toHaveAttribute('href', expect.stringContaining('nextjs.org/docs'));
+    expect(docsLink).toHaveAttribute('href', 'https://nextjs.org/docs');
   });
 
   it('should render footer links', () => {
     render(<Home />);
-    expect(screen.getByText('Learn')).toBeInTheDocument();
-    expect(screen.getByText('Examples')).toBeInTheDocument();
-    expect(screen.getByText(/Go to nextjs.org/i)).toBeInTheDocument();
+    expect(screen.getByText('Learn Next.js')).toBeInTheDocument();
+    expect(screen.getByText('shadcn/ui')).toBeInTheDocument();
+    expect(screen.getByText(/nuh\.com\.sg/i)).toBeInTheDocument();
   });
 });
