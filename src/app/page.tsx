@@ -48,6 +48,7 @@ export default function Home() {
             alt="NUH - National University Hospital"
             width={160}
             height={40}
+            style={{ height: 'auto' }}
             className="dark:hidden"
             priority
           />
@@ -56,6 +57,7 @@ export default function Home() {
             alt="NUH - National University Hospital"
             width={160}
             height={40}
+            style={{ height: 'auto' }}
             className="hidden dark:block"
             priority
           />
