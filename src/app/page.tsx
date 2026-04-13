@@ -1,9 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '@/components/atoms/button';
 import { ExternalLink } from '@/components/atoms/external-link';
 import { ModeToggle } from '@/components/molecules/mode-toggle';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 const colorPalette = [
