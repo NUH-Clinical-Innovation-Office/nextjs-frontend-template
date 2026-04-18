@@ -375,8 +375,13 @@ This template includes security headers configured in `next.config.ts` to protec
 
 ### Configuration
 
+- [Backend Integration Guide](docs/backend-integration.md) - Frontend-backend integration patterns, environment variables, and API consumption
 - [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration
 - [Environment Variables Guide](.env.example) - Environment variable configuration template with detailed comments
+
+### Feature Reference
+
+- [Features Overview](docs/features.md) - Complete feature inventory with status and descriptions
 
 ### AI Development
 
