@@ -84,24 +84,23 @@
 | Docker (multi-stage) | stable | Multi-stage Dockerfile with standalone output |
 | Docker Compose | stable | Local containerized development |
 | Standalone output | stable | Next.js self-contained production build |
-| GitHub Actions CI | stable | CI pipeline: build, lint, test, type-check |
-| Feature branch deployments | stable | Auto-deploy to preview URLs via Cloudflare Tunnel |
-| Staging deploy | stable | Auto-deploy on merge to main |
-| Production deploy | stable | Manual approval workflow |
 | Helm charts | stable | Kubernetes Deployment, Service, HPA, Ingress, ServiceAccount |
 | HPA (Horizontal Pod Autoscaler) | stable | CPU/memory-based pod scaling |
-| Cloudflare Tunnel | stable | Branch preview routing and DNS |
-| Vault integration | stable | Documentation for secrets management (not code) |
+| GitHub Actions CI | planned | CI pipeline workflow (build, lint, test, type-check) |
+| Feature branch deployments | planned | Auto-deploy to preview URLs via Cloudflare Tunnel |
+| Staging/production deploy | planned | GitHub Actions deployment workflows |
+| Cloudflare Tunnel | planned | Branch preview routing and DNS (documentation exists) |
+| Vault integration | planned | HashiCorp Vault integration (documentation exists) |
 
 ## Automation
 
 | Feature | Status | Description |
 |---------|--------|-------------|
 | Renovate | stable | Automated dependency updates via .github/renovate.json |
-| Feature branch cleanup | stable | Auto-cleanup resources when branch deleted |
-| Image cleanup | stable | Auto-cleanup old Docker images |
-| Staging rollback | stable | One-click staging environment rollback |
-| Production rollback | stable | One-click production environment rollback |
+| Feature branch cleanup | planned | Auto-cleanup workflow when branch deleted |
+| Image cleanup | planned | Auto-cleanup old Docker images workflow |
+| Staging rollback | planned | One-click staging environment rollback workflow |
+| Production rollback | planned | One-click production environment rollback workflow |
 
 ## Documentation
 
