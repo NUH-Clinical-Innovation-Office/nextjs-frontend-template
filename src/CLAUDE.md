@@ -7,10 +7,9 @@ This guide helps Claude Code understand the folder structure and component archi
 ```
 src/
 ├── app/                    # Next.js App Router (pages and layouts)
-│   ├── api/               # API routes (server-side endpoints)
-│   │   └── example/       # Example API endpoint
 │   ├── layout.tsx         # Root layout (applies to all pages)
-│   └── page.tsx           # Home page
+│   ├── page.tsx           # Home page
+│   └── ...                # Additional routes (api/, about/, etc.)
 │
 ├── components/            # React components (Atomic Design pattern)
 │   ├── atoms/            # Basic, indivisible UI elements

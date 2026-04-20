@@ -70,12 +70,10 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 
 ### CI/CD & Deployment
 
-- **GitHub Actions workflows** for staging, production, and feature branches
-- **Feature branch deployments** with automatic preview environments and cleanup
 - **Docker** support with Docker Compose
-- **Kubernetes** service account configuration for GitHub Actions
-- **HashiCorp Vault** integration for secure secrets management
-- **Cloudflare Tunnel** integration for secure external access
+- **Kubernetes** and **Helm** charts for container orchestration
+- **Trivy** security scanning for dependencies, containers, and IaC
+- **Renovate** for automated dependency updates
 
 ## Getting Started
 
@@ -355,7 +353,7 @@ This template includes security headers configured in `next.config.ts` to protec
 ├── docs/                   # Documentation
 ├── helm/                   # Helm charts for Kubernetes
 ├── scripts/                # Utility scripts
-└── .github/workflows/      # CI/CD workflows
+└── .github/                # GitHub config (Renovate)
 ```
 
 ## Documentation
@@ -375,8 +373,13 @@ This template includes security headers configured in `next.config.ts` to protec
 
 ### Configuration
 
+- [Backend Integration Guide](docs/backend-integration.md) - Frontend-backend integration patterns, environment variables, and API consumption
 - [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration
 - [Environment Variables Guide](.env.example) - Environment variable configuration template with detailed comments
+
+### Feature Reference
+
+- [Features Overview](docs/features.md) - Complete feature inventory with status and descriptions
 
 ### AI Development
 
@@ -475,80 +478,15 @@ docker-compose up
 
 ### CI/CD
 
-This template includes GitHub Actions workflows for:
+This template provides a foundation for CI/CD but does not include pre-configured GitHub Actions workflows. The infrastructure supports:
 
-- **CI Pipeline** (`ci.yml`) - Runs on all pull requests with build, lint, test, and type-check
-- **Staging deployment** (`staging-deploy.yml`) - Automatic deployment to staging environment on merge to main
-- **Production deployment** (`production-deploy.yml`) - Production deployments with approval gate
-- **Production rollback** (`production-rollback.yml`) - Quick rollback to previous production deployment
-- **Staging rollback** (`staging-rollback.yml`) - Quick rollback to previous staging deployment
-- **Feature branch deployment** (`feature-deploy.yml`) - Automatic preview deployments for feature branches
-- **Feature cleanup** (`feature-cleanup.yml`) - Auto-cleanup when feature branches are deleted
-- **Image cleanup** (`image-cleanup.yml`) - Scheduled cleanup of old container images (weekly on Sundays at 2 AM UTC)
+- **Renovate** (`.github/renovate.json`) - Automated dependency updates configured
+- **Local security scanning** via Trivy npm scripts
 
-#### Reusable Workflows
-
-The template uses reusable workflows to reduce code duplication and ensure consistency:
-
-**`reusable-build.yml`** - Shared build, test, and quality checks workflow
-
-- Runs setup, lint, test, knip, and Trivy security scanning in parallel
-- Caches `node_modules` for faster builds
-- Uploads security scan results to GitHub Security tab
-- Configurable Node.js version (default: 24.14.1)
-- Used by: `ci.yml`, `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
-
-**`reusable-docker.yml`** - Docker image build and push workflow
-
-- Multi-platform builds (linux/amd64, linux/arm64)
-- Automatic image tagging with branch name and commit SHA
-- GitHub Container Registry (ghcr.io) integration
-- Build cache optimization using GitHub Actions cache
-- Configurable platforms, registry, and push behavior
-- Outputs: `image_tag`, `image_name` for use in deployment workflows
-- Used by: `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
-
-**`reusable-security-scan.yml`** - Docker image security scanning workflow
-
-- Scans Docker images for CRITICAL and HIGH severity vulnerabilities
-- Generates SARIF output for GitHub Security tab integration
-- Produces table format output for build logs
-- Used by deployment workflows for pre-deployment security validation
-
-**Benefits**:
-
-- Single source of truth for build and Docker processes
-- Easier maintenance and updates across all workflows
-- Consistent behavior across environments (staging, production, feature branches)
-
-#### Container Image Cleanup
-
-The `image-cleanup.yml` workflow automatically manages GitHub Container Registry storage by removing old and unused images:
-
-**Schedule**: Runs weekly on Sundays at 2 AM UTC (configurable via cron, also supports manual trigger via `workflow_dispatch`)
-
-**Retention Policy**:
-
-- **Production images** (`main-*` tags): Keeps the latest 3 versions, deletes older ones
-- **Feature branch images**: Keeps images from the last 7 days, deletes older ones
-- **`latest` tag**: Always protected, never deleted
-- **Untagged images**: Always deleted immediately
-
-**How it works**:
-
-1. Fetches all image versions from GitHub Container Registry (with pagination support for >100 images)
-2. Identifies deletable images based on tag patterns and age
-3. Deletes images while respecting the retention policy
-4. Reports summary of deleted vs failed deletions
-
-**Configuration** (in `image-cleanup.yml`):
-
-```yaml
-KEEP_LATEST_PRODUCTION: 3      # Number of main-* images to retain
-FEATURE_RETENTION_DAYS: 7      # Days to keep feature branch images
-```
-
-This automation prevents registry storage bloat while ensuring recent and production images remain available.
+To add CI/CD workflows, see the documentation guides in `docs/` for:
+- Kubernetes deployment patterns
+- Helm chart configuration
+- Docker containerization
 
 ## Learn More
 
