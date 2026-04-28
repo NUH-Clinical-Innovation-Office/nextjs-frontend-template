@@ -478,15 +478,15 @@ docker-compose up
 
 ### CI/CD
 
-This template provides a foundation for CI/CD but does not include pre-configured GitHub Actions workflows. The infrastructure supports:
+This template includes comprehensive GitHub Actions workflows:
 
-- **Renovate** (`.github/renovate.json`) - Automated dependency updates configured
-- **Local security scanning** via Trivy npm scripts
+- **CI/CD** (`.github/workflows/ci.yml`): Runs on push to main - builds, lints, tests, security scans, and deploys
+- **Feature Deploy** (`.github/workflows/feature-deploy.yml`): Auto-deploys feature branches to preview URLs
+- **Staging Deploy** (`.github/workflows/staging-deploy.yml`): Auto-deploys main branch to staging
+- **Production Deploy** (`.github/workflows/production-deploy.yml`): Production deployment with approval
+- **Feature Cleanup** (`.github/workflows/feature-cleanup.yml`): Auto-cleanup when feature branches are deleted
 
-To add CI/CD workflows, see the documentation guides in `docs/` for:
-- Kubernetes deployment patterns
-- Helm chart configuration
-- Docker containerization
+Feature branch previews are deployed via Cloudflare Tunnel with automatic DNS configuration.
 
 ## Learn More
 
