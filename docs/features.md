@@ -86,11 +86,11 @@
 | Standalone output | stable | Next.js self-contained production build |
 | Helm charts | stable | Kubernetes Deployment, Service, HPA, Ingress, ServiceAccount |
 | HPA (Horizontal Pod Autoscaler) | stable | CPU/memory-based pod scaling |
-| GitHub Actions CI | planned | CI pipeline workflow (build, lint, test, type-check) |
-| Feature branch deployments | planned | Auto-deploy to preview URLs via Cloudflare Tunnel |
-| Staging/production deploy | planned | GitHub Actions deployment workflows |
-| Cloudflare Tunnel | planned | Branch preview routing and DNS (documentation exists) |
-| Vault integration | planned | HashiCorp Vault integration (documentation exists) |
+| GitHub Actions CI | stable | CI pipeline workflow (build, lint, test, type-check) |
+| Feature branch deployments | stable | Auto-deploy to preview URLs via Cloudflare Tunnel |
+| Staging/production deploy | stable | GitHub Actions deployment workflows |
+| Cloudflare Tunnel | stable | Branch preview routing and DNS (documentation exists) |
+| Vault integration | stable | HashiCorp Vault integration (documentation exists) |
 
 ## Automation
 
