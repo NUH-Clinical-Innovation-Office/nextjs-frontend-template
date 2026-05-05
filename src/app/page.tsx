@@ -594,7 +594,9 @@ export default function Home() {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Delete patient record?</AlertDialogTitle>
+                      <AlertDialogTitle className="text-destructive">
+                        Delete patient record?
+                      </AlertDialogTitle>
                       <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
