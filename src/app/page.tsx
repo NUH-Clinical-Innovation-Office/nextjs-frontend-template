@@ -185,6 +185,9 @@ export default function Home() {
                 <ExternalLink href="https://www.nuh.com.sg">Visit NUH</ExternalLink>
               </Button>
               <Button asChild variant="outline" size="lg">
+                <ExternalLink href="https://ui.shadcn.com">shadcn</ExternalLink>
+              </Button>
+              <Button asChild variant="outline" size="lg">
                 <ExternalLink href="https://nextjs.org/docs">Read the Next.js docs</ExternalLink>
               </Button>
             </div>
