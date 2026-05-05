@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import * as React from 'react';
+import React from 'react';
 import { type DayButton, DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -42,16 +42,19 @@ function Calendar({
           'absolute inset-x-0 top-0 flex w-full items-center justify-between gap-1',
           defaultClassNames.nav,
         ),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         button_previous: cn(
           buttonVariants({ variant: buttonVariant }),
           'size-(--cell-size) p-0 select-none aria-disabled:opacity-50',
           defaultClassNames.button_previous,
         ),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         button_next: cn(
           buttonVariants({ variant: buttonVariant }),
           'size-(--cell-size) p-0 select-none aria-disabled:opacity-50',
           defaultClassNames.button_next,
         ),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         month_caption: cn(
           'flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)',
           defaultClassNames.month_caption,
@@ -60,11 +63,13 @@ function Calendar({
           'flex h-(--cell-size) w-full items-center justify-center gap-1.5 text-sm font-medium',
           defaultClassNames.dropdowns,
         ),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         dropdown_root: cn(
           'relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:ring-[3px] has-focus:ring-ring/50',
           defaultClassNames.dropdown_root,
         ),
         dropdown: cn('absolute inset-0 bg-popover opacity-0', defaultClassNames.dropdown),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         caption_label: cn(
           'font-medium select-none',
           captionLayout === 'label'
@@ -79,7 +84,9 @@ function Calendar({
           defaultClassNames.weekday,
         ),
         week: cn('mt-2 flex w-full', defaultClassNames.week),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         week_number_header: cn('w-(--cell-size) select-none', defaultClassNames.week_number_header),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         week_number: cn(
           'text-[0.8rem] text-muted-foreground select-none',
           defaultClassNames.week_number,
@@ -91,8 +98,11 @@ function Calendar({
             : '[&:first-child[data-selected=true]_button]:rounded-l-md',
           defaultClassNames.day,
         ),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         range_start: cn('rounded-l-md bg-accent', defaultClassNames.range_start),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         range_middle: cn('rounded-none', defaultClassNames.range_middle),
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects snake_case
         range_end: cn('rounded-r-md bg-accent', defaultClassNames.range_end),
         today: cn(
           'rounded-md bg-accent text-accent-foreground data-[selected=true]:rounded-none',
@@ -107,9 +117,11 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects PascalCase
         Root: ({ className, rootRef, ...props }) => {
           return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
         },
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects PascalCase
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === 'left') {
             return <ChevronLeftIcon className={cn('size-4', className)} {...props} />;
@@ -121,7 +133,9 @@ function Calendar({
 
           return <ChevronDownIcon className={cn('size-4', className)} {...props} />;
         },
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects PascalCase
         DayButton: CalendarDayButton,
+        // biome-ignore lint/style/useNamingConvention: react-day-picker expects PascalCase
         WeekNumber: ({ children, ...props }) => {
           return (
             <td {...props}>

@@ -171,7 +171,7 @@ export default function Home() {
 
         <main className="max-w-4xl mx-auto px-8 py-12 flex flex-col gap-12">
           {/* Hero */}
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-6">
             <Badge variant="outline" className="w-fit">
               Frontend Template
             </Badge>
@@ -185,7 +185,7 @@ export default function Home() {
                 <ExternalLink href="https://www.nuh.com.sg">Visit NUH</ExternalLink>
               </Button>
               <Button asChild variant="outline" size="lg">
-                <ExternalLink href="https://ui.shadcn.com">shadcn</ExternalLink>
+                <ExternalLink href="https://ui.shadcn.com">Learn shadcn</ExternalLink>
               </Button>
               <Button asChild variant="outline" size="lg">
                 <ExternalLink href="https://nextjs.org/docs">Read the Next.js docs</ExternalLink>
@@ -194,7 +194,7 @@ export default function Home() {
           </section>
 
           {/* Color Palette */}
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-6">
             <h2 className="text-2xl font-semibold">Brand Colour Palette</h2>
             <p className="text-muted-foreground">
               The four NUHS brand colours, applied consistently across light and dark modes.
@@ -217,9 +217,9 @@ export default function Home() {
           {/* Basic Components */}
           <section className="flex flex-col gap-6">
             <h2 className="text-2xl font-semibold">Basic Components</h2>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {/* Button */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Button Variants
                 </span>
@@ -232,7 +232,7 @@ export default function Home() {
                   <Button variant="link">Link</Button>
                 </div>
               </div>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Button Sizes
                 </span>
@@ -246,7 +246,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Badge */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Badge Variants
                 </span>
@@ -260,7 +260,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Card */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Card
                 </span>
@@ -278,7 +278,7 @@ export default function Home() {
                 </Card>
               </div>
               {/* Separator */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Separator
                 </span>
@@ -289,7 +289,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Skeleton */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Skeleton
                 </span>
@@ -307,9 +307,9 @@ export default function Home() {
           {/* Navigation */}
           <section className="flex flex-col gap-2">
             <h2 className="text-2xl font-semibold">Navigation</h2>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {/* Tabs */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Tabs
                 </span>
@@ -330,7 +330,7 @@ export default function Home() {
                 </Tabs>
               </div>
               {/* Collapsible */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Collapsible
                 </span>
@@ -353,7 +353,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Pagination */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Pagination — Page {currentPage}
                 </span>
@@ -382,7 +382,7 @@ export default function Home() {
                 </Pagination>
               </div>
               {/* Navigation Menu */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Navigation Menu
                 </span>
@@ -425,9 +425,9 @@ export default function Home() {
           {/* Forms */}
           <section className="flex flex-col gap-2">
             <h2 className="text-2xl font-semibold">Forms</h2>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {/* Input */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Input
                 </span>
@@ -437,14 +437,14 @@ export default function Home() {
                 </div>
               </div>
               {/* Textarea */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Textarea
                 </span>
                 <TextareaAtom placeholder="Clinical notes..." className="w-full sm:w-96 min-h-20" />
               </div>
               {/* Label + Input */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Label with Input
                 </span>
@@ -454,7 +454,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Select */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Select
                 </span>
@@ -471,7 +471,7 @@ export default function Home() {
                 </Select>
               </div>
               {/* Checkbox */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Checkbox
                 </span>
@@ -485,7 +485,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Radio Group */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Radio Group
                 </span>
@@ -501,7 +501,7 @@ export default function Home() {
                 </RadioGroupAtom>
               </div>
               {/* Switch */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Switch
                 </span>
@@ -517,7 +517,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Slider */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Slider — {sliderValue}
                 </span>
@@ -530,7 +530,7 @@ export default function Home() {
                 />
               </div>
               {/* Toggle */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Toggle
                 </span>
@@ -542,7 +542,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Toggle Group */}
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Toggle Group
                 </span>
@@ -556,9 +556,9 @@ export default function Home() {
           </section>
 
           {/* Overlays */}
-          <section className="flex flex-col gap-4">
+          <section className="flex flex-col gap-6">
             <h2 className="text-2xl font-semibold">Overlays</h2>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {/* Dialog */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -624,11 +624,11 @@ export default function Home() {
                     <Button variant="outline">Open Patient Summary</Button>
                   </SheetTrigger>
                   <SheetContent className="rounded-l-2xl w-80 sm:w-96 p-6">
-                    <SheetHeader className="pb-4">
+                    <SheetHeader className="p-0">
                       <SheetTitle className="text-lg font-semibold">Patient Summary</SheetTitle>
                       <p className="text-sm text-muted-foreground">Sarah Lim · NRIC S1234567A</p>
                     </SheetHeader>
-                    <div className="flex flex-col gap-4 py-4">
+                    <div className="flex flex-col gap-6 py-4">
                       <div className="flex justify-between py-2">
                         <span className="text-sm text-muted-foreground">Department</span>
                         <span className="text-sm font-medium">Cardiology</span>
@@ -709,7 +709,7 @@ export default function Home() {
                     <Button variant="outline">Open preferences</Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-64">
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-6">
                       <div className="text-sm font-semibold">Notification preferences</div>
                       <div className="flex items-center justify-between">
                         <LabelAtom htmlFor="pop-email" className="text-xs">
@@ -746,7 +746,7 @@ export default function Home() {
           {/* Feedback */}
           <section className="flex flex-col gap-6">
             <h2 className="text-2xl font-semibold">Feedback</h2>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-6">
               {/* Alert */}
               <div className="flex flex-col gap-2">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -899,13 +899,13 @@ export default function Home() {
 
         <footer className="border-t border-border mt-8 px-8 py-6 flex gap-6 flex-wrap items-center justify-center text-muted-foreground text-sm">
           <Button asChild variant="link" size="sm">
-            <ExternalLink href="https://nextjs.org/learn">Learn Next.js</ExternalLink>
-          </Button>
-          <Button asChild variant="link" size="sm">
-            <ExternalLink href="https://ui.shadcn.com">shadcn/ui</ExternalLink>
-          </Button>
-          <Button asChild variant="link" size="sm">
             <ExternalLink href="https://www.nuh.com.sg">nuh.com.sg</ExternalLink>
+          </Button>
+          <Button asChild variant="link" size="sm">
+            <ExternalLink href="https://ui.shadcn.com">Learn shadcn/ui</ExternalLink>
+          </Button>
+          <Button asChild variant="link" size="sm">
+            <ExternalLink href="https://nextjs.org/learn">Learn Next.js</ExternalLink>
           </Button>
         </footer>
       </div>
