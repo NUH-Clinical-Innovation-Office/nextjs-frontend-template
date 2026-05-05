@@ -599,7 +599,10 @@ export default function Home() {
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => toast.success('Record deleted')}>
+                      <AlertDialogAction
+                        variant="destructive"
+                        onClick={() => toast.success('Record deleted')}
+                      >
                         Delete
                       </AlertDialogAction>
                     </AlertDialogFooter>
