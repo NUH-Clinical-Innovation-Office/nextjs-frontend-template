@@ -616,20 +616,20 @@ export default function Home() {
                     <Button variant="outline">Open Patient Summary</Button>
                   </SheetTrigger>
                   <SheetContent className="rounded-l-2xl w-80 sm:w-96 p-6">
-                    <SheetHeader className="pb-4 border-b border-border">
+                    <SheetHeader className="pb-4">
                       <SheetTitle className="text-lg font-semibold">Patient Summary</SheetTitle>
                       <p className="text-sm text-muted-foreground">Sarah Lim · NRIC S1234567A</p>
                     </SheetHeader>
                     <div className="flex flex-col gap-4 py-4">
-                      <div className="flex justify-between py-2 border-b border-border">
+                      <div className="flex justify-between py-2">
                         <span className="text-sm text-muted-foreground">Department</span>
                         <span className="text-sm font-medium">Cardiology</span>
                       </div>
-                      <div className="flex justify-between py-2 border-b border-border">
+                      <div className="flex justify-between py-2">
                         <span className="text-sm text-muted-foreground">Last visit</span>
                         <span className="text-sm font-medium">12 Apr 2026</span>
                       </div>
-                      <div className="flex justify-between py-2 border-b border-border">
+                      <div className="flex justify-between py-2">
                         <span className="text-sm text-muted-foreground">Next appt.</span>
                         <span className="text-sm font-medium">12 May 2026</span>
                       </div>
@@ -654,7 +654,7 @@ export default function Home() {
                   <DrawerTrigger asChild>
                     <Button variant="outline">Open Quick Actions</Button>
                   </DrawerTrigger>
-                  <DrawerContent className="rounded-t-2xl mx-auto max-w-md">
+                  <DrawerContent className="rounded-t-2xl mx-auto w-full max-w-lg">
                     <DrawerHeader className="text-center pb-2">
                       <DrawerTitle className="text-lg font-semibold">Quick Actions</DrawerTitle>
                       <DrawerDescription className="text-sm text-muted-foreground">
