@@ -46,6 +46,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
 }
 
 :root {
@@ -55,7 +57,9 @@
      Orange     #e57200 → oklch(0.674 0.171 53)  — Highlight (CTAs & badges)
      Red        #e4002b → oklch(0.579 0.234 24)  — Destructive (alerts)
   */
-  --radius: 0.625rem;
+  --radius: 0.875rem; /* 14px — base radius (was 10px in v1) */
+  --radius-2xl: 1.5rem; /* 24px — cards and large surfaces */
+  --radius-3xl: 2rem; /* 32px — hero surfaces */
   --background: oklch(1 0 0);
   --foreground: oklch(0.319 0.117 258);
   --card: oklch(1 0 0);
