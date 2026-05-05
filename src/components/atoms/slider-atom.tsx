@@ -1,9 +1,4 @@
-import type { ComponentProps } from 'react';
 import { Slider as SliderUI } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
+import { createAtom } from '@/lib/atom';
 
-type SliderProps = ComponentProps<typeof SliderUI>;
-
-export function SliderAtom({ className, ...props }: SliderProps) {
-  return <SliderUI className={cn('cursor-pointer', className)} {...props} />;
-}
+export const SliderAtom = createAtom(SliderUI);

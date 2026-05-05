@@ -1,9 +1,4 @@
-import type { ComponentProps } from 'react';
 import { Switch as SwitchUI } from '@/components/ui/switch';
-import { cn } from '@/lib/utils';
+import { createAtom } from '@/lib/atom';
 
-type SwitchProps = ComponentProps<typeof SwitchUI>;
-
-export function SwitchAtom({ className, ...props }: SwitchProps) {
-  return <SwitchUI className={cn('cursor-pointer', className)} {...props} />;
-}
+export const SwitchAtom = createAtom(SwitchUI);

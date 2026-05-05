@@ -1,9 +1,4 @@
-import type { ComponentProps } from 'react';
 import { Label as LabelUI } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
+import { createAtom } from '@/lib/atom';
 
-type LabelProps = ComponentProps<typeof LabelUI>;
-
-export function LabelAtom({ className, ...props }: LabelProps) {
-  return <LabelUI className={cn('cursor-pointer', className)} {...props} />;
-}
+export const LabelAtom = createAtom(LabelUI, { cursorPointer: false });
