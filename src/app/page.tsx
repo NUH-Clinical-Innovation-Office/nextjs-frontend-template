@@ -134,6 +134,7 @@ export default function Home() {
   const [progress, setProgress] = useState(45);
   const [sliderValue, setSliderValue] = useState([50]);
   const [toggleState, setToggleState] = useState(false);
+  const [toggleBold, setToggleBold] = useState(false);
   const [selectedRadio, setSelectedRadio] = useState('option-1');
   const [selectedCheckbox, setSelectedCheckbox] = useState(false);
   const [selectValue, setSelectValue] = useState('');
@@ -531,7 +532,7 @@ export default function Home() {
                   Toggle
                 </span>
                 <div className="flex items-center gap-3">
-                  <Toggle pressed={toggleState} onPressedChange={setToggleState}>
+                  <Toggle pressed={toggleBold} onPressedChange={setToggleBold}>
                     Bold
                   </Toggle>
                   <Toggle>Italic</Toggle>
