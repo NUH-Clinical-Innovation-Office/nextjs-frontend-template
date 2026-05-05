@@ -7,6 +7,14 @@ afterEach(() => {
   cleanup();
 });
 
+// Mock ResizeObserver for @radix-ui/react-use-size
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+window.ResizeObserver = ResizeObserverMock;
+
 // Mock window.matchMedia for theme provider
 Object.defineProperty(window, 'matchMedia', {
   writable: true,

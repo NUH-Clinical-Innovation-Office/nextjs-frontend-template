@@ -32,7 +32,7 @@ describe('Home', () => {
   it('should render footer links', () => {
     render(<Home />);
     expect(screen.getByText('Learn Next.js')).toBeInTheDocument();
-    expect(screen.getByText('shadcn/ui')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Learn shadcn\/ui/i })).toBeInTheDocument();
     expect(screen.getByText(/nuh\.com\.sg/i)).toBeInTheDocument();
   });
 });
