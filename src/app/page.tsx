@@ -213,9 +213,9 @@ export default function Home() {
           {/* Basic Components */}
           <section className="flex flex-col gap-6">
             <h2 className="text-2xl font-semibold">Basic Components</h2>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-4">
               {/* Button */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Button Variants
                 </span>
@@ -228,7 +228,7 @@ export default function Home() {
                   <Button variant="link">Link</Button>
                 </div>
               </div>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Button Sizes
                 </span>
@@ -242,7 +242,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Badge */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Badge Variants
                 </span>
@@ -256,7 +256,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Card */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Card
                 </span>
@@ -274,18 +274,18 @@ export default function Home() {
                 </Card>
               </div>
               {/* Separator */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Separator
                 </span>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-col gap-2 items-center">
                   <span className="text-sm">Section A</span>
-                  <Separator className="flex-1" />
+                  <Separator className="w-32" />
                   <span className="text-sm">Section B</span>
                 </div>
               </div>
               {/* Skeleton */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Skeleton
                 </span>
@@ -301,11 +301,11 @@ export default function Home() {
           </section>
 
           {/* Navigation */}
-          <section className="flex flex-col gap-6">
+          <section className="flex flex-col gap-2">
             <h2 className="text-2xl font-semibold">Navigation</h2>
             <div className="flex flex-col gap-4">
               {/* Tabs */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Tabs
                 </span>
@@ -326,7 +326,7 @@ export default function Home() {
                 </Tabs>
               </div>
               {/* Collapsible */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Collapsible
                 </span>
@@ -337,7 +337,7 @@ export default function Home() {
                         {isCollapsibleOpen ? 'Expanded' : 'Collapsed'}
                       </p>
                       <CollapsibleTrigger asChild>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="outline" size="sm">
                           {isCollapsibleOpen ? 'Collapse' : 'Expand'}
                         </Button>
                       </CollapsibleTrigger>
@@ -349,7 +349,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Pagination */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Pagination — Page {currentPage}
                 </span>
@@ -378,14 +378,14 @@ export default function Home() {
                 </Pagination>
               </div>
               {/* Navigation Menu */}
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Navigation Menu
                 </span>
                 <NavigationMenu>
                   <NavigationMenuList>
                     <NavigationMenuItem>
-                      <NavigationMenuTrigger className="cursor-pointer">
+                      <NavigationMenuTrigger className="cursor-pointer outline outline-1">
                         Patient Menu
                       </NavigationMenuTrigger>
                       <NavigationMenuContent className="min-w-48">
@@ -419,11 +419,11 @@ export default function Home() {
           </section>
 
           {/* Forms */}
-          <section className="flex flex-col gap-6">
+          <section className="flex flex-col gap-2">
             <h2 className="text-2xl font-semibold">Forms</h2>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {/* Input */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Input
                 </span>
@@ -433,14 +433,14 @@ export default function Home() {
                 </div>
               </div>
               {/* Textarea */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Textarea
                 </span>
                 <TextareaAtom placeholder="Clinical notes..." className="w-full sm:w-96 min-h-20" />
               </div>
               {/* Label + Input */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Label with Input
                 </span>
@@ -450,7 +450,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Select */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Select
                 </span>
@@ -467,7 +467,7 @@ export default function Home() {
                 </Select>
               </div>
               {/* Checkbox */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Checkbox
                 </span>
@@ -481,7 +481,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Radio Group */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Radio Group
                 </span>
@@ -497,7 +497,7 @@ export default function Home() {
                 </RadioGroupAtom>
               </div>
               {/* Switch */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Switch
                 </span>
@@ -513,7 +513,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Slider */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Slider — {sliderValue}
                 </span>
@@ -526,7 +526,7 @@ export default function Home() {
                 />
               </div>
               {/* Toggle */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Toggle
                 </span>
@@ -538,7 +538,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Toggle Group */}
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-4">
                 <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Toggle Group
                 </span>
@@ -614,12 +614,12 @@ export default function Home() {
                   <SheetTrigger asChild>
                     <Button variant="outline">Open Patient Summary</Button>
                   </SheetTrigger>
-                  <SheetContent className="rounded-l-2xl w-80 sm:w-96">
+                  <SheetContent className="rounded-l-2xl w-80 sm:w-96 p-6">
                     <SheetHeader className="pb-4 border-b border-border">
                       <SheetTitle className="text-lg font-semibold">Patient Summary</SheetTitle>
                       <p className="text-sm text-muted-foreground">Sarah Lim · NRIC S1234567A</p>
                     </SheetHeader>
-                    <div className="flex flex-col gap-3 py-4">
+                    <div className="flex flex-col gap-4 py-4">
                       <div className="flex justify-between py-2 border-b border-border">
                         <span className="text-sm text-muted-foreground">Department</span>
                         <span className="text-sm font-medium">Cardiology</span>
@@ -660,7 +660,7 @@ export default function Home() {
                         Common tasks and shortcuts
                       </DrawerDescription>
                     </DrawerHeader>
-                    <div className="flex gap-3 px-6 pb-6 overflow-x-auto">
+                    <div className="flex gap-3 px-6 pb-6">
                       <Button variant="secondary" className="shrink-0">
                         Book appointment
                       </Button>
@@ -700,7 +700,7 @@ export default function Home() {
                     <Button variant="outline">Open preferences</Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-64">
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-4">
                       <div className="text-sm font-semibold">Notification preferences</div>
                       <div className="flex items-center justify-between">
                         <LabelAtom htmlFor="pop-email" className="text-xs">
