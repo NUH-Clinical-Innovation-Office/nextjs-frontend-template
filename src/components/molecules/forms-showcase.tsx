@@ -109,15 +109,15 @@ export function FormsShowcase() {
         <div className="flex flex-col gap-6">
           <SectionLabel>Toggle</SectionLabel>
           <div className="flex items-center gap-3">
-            <Toggle pressed={toggleBold} onPressedChange={setToggleBold}>
+            <Toggle variant="outline" pressed={toggleBold} onPressedChange={setToggleBold}>
               Bold
             </Toggle>
-            <Toggle>Italic</Toggle>
+            <Toggle variant="outline">Italic</Toggle>
           </div>
         </div>
         <div className="flex flex-col gap-6">
           <SectionLabel>Toggle Group</SectionLabel>
-          <ToggleGroup type="multiple" defaultValue={['bold']}>
+          <ToggleGroup type="multiple" defaultValue={['bold']} variant="outline">
             <ToggleGroupItem value="bold">B</ToggleGroupItem>
             <ToggleGroupItem value="italic">I</ToggleGroupItem>
             <ToggleGroupItem value="center">≡</ToggleGroupItem>

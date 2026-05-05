@@ -34,9 +34,13 @@ export function NavigationShowcase() {
           <SectionLabel>Tabs</SectionLabel>
           <Tabs defaultValue="tab1" className="w-full sm:w-96">
             <TabsList>
-              <TabsTrigger value="tab1">Patients</TabsTrigger>
-              <TabsTrigger value="tab2">Records</TabsTrigger>
-              <TabsTrigger value="tab3" disabled>
+              <TabsTrigger value="tab1" variant="outline">
+                Patients
+              </TabsTrigger>
+              <TabsTrigger value="tab2" variant="outline">
+                Records
+              </TabsTrigger>
+              <TabsTrigger value="tab3" variant="outline" disabled>
                 Disabled
               </TabsTrigger>
             </TabsList>
@@ -98,7 +102,7 @@ export function NavigationShowcase() {
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
-                <NavigationMenuTrigger className="cursor-pointer outline outline-1">
+                <NavigationMenuTrigger className="cursor-pointer">
                   Patient Menu
                 </NavigationMenuTrigger>
                 <NavigationMenuContent className="min-w-48">

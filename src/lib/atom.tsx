@@ -12,8 +12,9 @@ export function createAtom<Props extends object>(
   return function Atom({ className, ...rest }: Props & { className?: string }) {
     return (
       <Component
-        className={cn(cursorPointer ? 'cursor-pointer' : 'cursor-text', className) as string}
-        {...(rest as Props)}
+        className={cn(cursorPointer ? 'cursor-pointer' : 'cursor-text', className)}
+        // biome-ignore lint/suspicious/noExplicitAny: spread rest props which may not have className
+        {...(rest as any)}
       />
     );
   };

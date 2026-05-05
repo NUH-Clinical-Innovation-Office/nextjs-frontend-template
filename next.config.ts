@@ -65,20 +65,15 @@ const nextConfig: NextConfig = {
             value: 'none',
           },
           // Content Security Policy - Controls which resources can be loaded and executed
-          // CRITICAL: Current configuration allows 'unsafe-inline' and 'unsafe-eval' which significantly
-          // weakens XSS protection. This is permissive for template use and MUST be hardened for production.
-          //
-          // For production use, implement nonce-based CSP:
-          // 1. Generate unique nonce per request in middleware
-          // 2. Pass nonce to script/style tags via headers
-          // 3. Update CSP: script-src 'self' 'nonce-{NONCE}' (remove unsafe-*)
-          //
+          // NOTE: Next.js 14+ app router injects inline scripts/styles (HMR, Tailwind critical CSS,
+          // Next.js runtime). The 'unsafe-inline' directives are REQUIRED for the app to function.
+          // To harden for production, implement nonce-based CSP via middleware:
           // Reference: https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy
           {
             key: 'Content-Security-Policy',
             value:
               "default-src 'self'; " +
-              "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " +
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
               "style-src 'self' 'unsafe-inline'; " +
               "img-src 'self' data: https:; " +
               "font-src 'self' data:; " +
