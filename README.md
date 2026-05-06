@@ -369,6 +369,14 @@ This template includes security headers configured in `next.config.ts` to protec
 - [Vault Secrets Management](docs/vault-setup-and-deployment.md) - HashiCorp Vault integration for secure secrets across environments
 - [Cloudflare & GitHub Integration](docs/cloudflare-github-setup.md) - Comprehensive guide to Cloudflare Tunnel setup and GitHub Actions integration
 
+### Features
+
+- [Features Overview](docs/features.md) - Complete inventory of all template features with implementation status
+
+### Backend Integration
+
+- [Backend Integration Guide](docs/backend-integration.md) - How to integrate this frontend with backend services and APIs
+
 ### Deployment & CI/CD
 
 - [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration, including feature branch deployments and workflow documentation
@@ -382,6 +390,17 @@ This template includes security headers configured in `next.config.ts` to protec
 
 - [CLAUDE.md](CLAUDE.md) - Project guidance for Claude Code AI assistant with essential commands, architecture patterns, and CI/CD infrastructure details
 - [Claude Code Superpowers](docs/superpowers/) - Custom AI agent workflows for brainstorming, planning, code review, and implementation tasks
+
+## Contributing
+
+Contributions are welcome! Please see our [CLAUDE.md](CLAUDE.md) for development guidelines and our GitHub workflows for contribution requirements.
+
+### Key Contribution Guidelines
+
+1. **Code Style**: Use Biome for linting and formatting (`npm run lint`, `npm run format`)
+2. **Testing**: All new features should include tests (`npm run test`)
+3. **Type Checking**: Ensure TypeScript passes (`npm run type-check`)
+4. **Commit Messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) format (validated by Husky)
 
 ### Kubernetes Deployment
 
