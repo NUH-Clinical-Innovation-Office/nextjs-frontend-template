@@ -360,6 +360,10 @@ This template includes security headers configured in `next.config.ts` to protec
 
 ## Documentation
 
+### Features
+
+- [Feature Inventory](docs/features.md) - Complete list of all features with implementation status
+
 ### Setup & Infrastructure
 
 - [Kubernetes Setup Guide](docs/kubernetes-setup.md) - Overview of Kubernetes cluster setup options (Raspberry Pi vs AWS)
@@ -371,11 +375,11 @@ This template includes security headers configured in `next.config.ts` to protec
 
 ### Deployment & CI/CD
 
+- [Backend Integration Guide](docs/backend-integration.md) - How this frontend integrates with backend services, environment variables, and API configuration
 - [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration, including feature branch deployments and workflow documentation
 
 ### Configuration
 
-- [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration
 - [Environment Variables Guide](.env.example) - Environment variable configuration template with detailed comments
 
 ### AI Development
