@@ -60,6 +60,7 @@ jobs:
           output: "trivy-image-results.sarif"
           severity: "CRITICAL,HIGH"
           scan-type: "image"
+          trivyignores: ".trivyignore"
 
       - name: Run Trivy vulnerability scanner (Table output)
         uses: aquasecurity/trivy-action@v0.36.0
@@ -68,6 +69,7 @@ jobs:
           format: "table"
           severity: "CRITICAL,HIGH"
           scan-type: "image"
+          trivyignores: ".trivyignore"
 
       - name: Check for vulnerabilities
         run: |
@@ -76,4 +78,5 @@ jobs:
             --severity CRITICAL \
             --exit-code 1 \
             --quiet \
+            --ignorefile .trivyignore \
             ${{ inputs.registry }}/${{ steps.image-name.outputs.IMAGE_NAME_LOWER }}:${{ inputs.image_tag }}
