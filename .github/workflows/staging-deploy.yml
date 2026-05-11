@@ -33,7 +33,7 @@ jobs:
       deployment_url: https://${{ github.event.repository.name }}-staging.${{ vars.CLOUDFLARE_DOMAIN }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate required secrets
         run: |
