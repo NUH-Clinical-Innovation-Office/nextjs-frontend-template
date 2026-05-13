@@ -38,7 +38,7 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 
 ### UI Components
 
-- **shadcn/ui** components (Button, Card, Badge)
+- **shadcn/ui** components (AlertDialog, Alert, Accordion, Calendar, Card, Checkbox, Collapsible, Badge, Avatar, Button, Pagination, Dialog, Label, DropdownMenu, Drawer, Input, Popover, NavigationMenu, Skeleton, Slider, Select, Separator, Sheet, Progress, Switch, Sonner, RadioGroup, ToggleGroup, Textarea, Tabs, Tooltip, Table, Toggle)
 - **Radix UI** primitives for accessible components
 - **Lucide React** icons
 - **next-themes** for dark mode support with pill-style theme toggle

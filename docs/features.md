@@ -12,7 +12,7 @@ This document provides a feature inventory for the Next.js frontend template.
 | TypeScript | stable | TypeScript 6 with strict mode (strict, noImplicitAny, strictNullChecks, etc.), Node 24.15.0 |
 | Tailwind CSS | stable | Tailwind CSS 4.2.2 with CSS-based configuration, dark mode support via `class` strategy |
 | **UI Components** | | |
-| shadcn/ui | stable | Pre-built UI components (Button, Card, Badge, Dialog, DropdownMenu, etc.) installed via CLI |
+| shadcn/ui | stable | Pre-built UI components (AlertDialog, Alert, Accordion, Calendar, Card, Checkbox, Collapsible, Badge, Avatar, Button, Pagination, Dialog, Label, DropdownMenu, Drawer, Input, Popover, NavigationMenu, Skeleton, Slider, Select, Separator, Sheet, Progress, Switch, Sonner, RadioGroup, ToggleGroup, Textarea, Tabs, Tooltip, Table, Toggle) installed via CLI |
 | Radix UI | stable | Unstyled, accessible UI primitives via `@radix-ui/react-switch` and shadcn/ui integration |
 | Lucide React | stable | Icon library (v1.7.0) with optimized imports via Turbopack |
 | Dark Mode | stable | Theme switching via `next-themes` with `ThemeProvider`, supports system preference |
