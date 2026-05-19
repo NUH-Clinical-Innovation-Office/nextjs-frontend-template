@@ -6,7 +6,8 @@ describe('buildCsp', () => {
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      process.env.API_URL = undefined;
+      // biome-ignore lint/performance/noDelete: process.env requires delete to truly unset a key
+      delete process.env.API_URL;
     } else {
       process.env.API_URL = originalEnv;
     }
@@ -39,11 +40,13 @@ describe('buildCsp', () => {
   });
 
   it('uses only self in connect-src when API_URL is unset', () => {
-    process.env.API_URL = undefined;
+    // biome-ignore lint/performance/noDelete: process.env requires delete to truly unset a key
+    delete process.env.API_URL;
     const csp = buildCsp('abc123');
     expect(csp).toContain("connect-src 'self'");
     expect(csp).not.toContain("connect-src 'self' http");
     expect(csp).not.toContain("connect-src 'self' https");
+    expect(csp).not.toContain("connect-src 'self' undefined");
   });
 
   it('includes default-src self', () => {
