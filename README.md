@@ -4,6 +4,13 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 
 ## Table of Contents
 
+- [Project Description](#project-description)
+- [Prerequisites](#prerequisites)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Project Architecture](#project-architecture)
+- [Project Structure](#project-structure)
+- [Commands](#commands)
 - [Features](#features)
   - [Core Framework](#core-framework)
   - [UI Components](#ui-components)
@@ -11,84 +18,40 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
   - [Testing](#testing)
   - [Security](#security)
   - [CI/CD & Deployment](#cicd--deployment)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Initial Setup for New Users](#initial-setup-for-new-users)
-  - [Running Locally](#running-locally)
-  - [Available Scripts](#available-scripts)
-  - [Husky Git Hooks](#husky-git-hooks)
-- [Security](#security-1)
-  - [Security Headers](#security-headers)
-- [Project Structure](#project-structure)
-- [Documentation](#documentation)
+- [Security Headers](#security-headers)
 - [Deployment](#deployment)
   - [Docker](#docker)
   - [CI/CD](#cicd)
-- [Learn More](#learn-more)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
 - [License](#license)
 
-## Features
+## Project Description
 
-### Core Framework
+This is a Next.js 16 frontend template designed for teams building production web applications with Kubernetes deployment. It provides a complete starting point with type-safe environment variables, atomic design components, comprehensive CI/CD pipelines, and infrastructure-as-code for staging, production, and ephemeral feature branch environments.
 
-- **Next.js 16** with App Router and Turbopack
-- **React 19** with latest features
-- **TypeScript** for type safety
-- **Tailwind CSS 4** for styling with PostCSS
+Key differentiators:
 
-### UI Components
+- **Full CI/CD out of the box**: Automated builds, security scanning, and deployments to Kubernetes via GitHub Actions
+- **Feature branch previews**: Every branch gets its own preview environment with automatic cleanup
+- **Production-grade security**: Non-root containers, security headers, Trivy scanning, Vault secrets injection
+- **Atomic design component library**: Pre-configured shadcn/ui components wrapped in atoms and molecules
 
-- **shadcn/ui** components (Button, Card, Badge)
-- **Radix UI** primitives for accessible components
-- **Lucide React** icons
-- **next-themes** for dark mode support with pill-style theme toggle
-- Atomic design structure (atoms, molecules, providers)
+## Prerequisites
 
-### Developer Experience
+- **Node.js** >= 24.15.0
+- **npm** (or yarn, pnpm, bun)
+- **Trivy** (optional, for security scanning) — [Installation Guide](https://aquasecurity.github.io/trivy/latest/getting-started/installation/)
+- **Docker** (optional, for containerized builds)
+- **kubectl** and **Helm** (optional, for Kubernetes deployment)
 
-- **Biome** for fast linting and formatting
-- **Vitest** for unit testing with React Testing Library
-- **Husky** for git hooks
-- **Commitlint** for conventional commit messages
-- **Knip** for dependency management
-- **TypeScript strict mode** with type checking
-- **Claude Code** integration with CLAUDE.md for AI-assisted development
+Follow the full setup guide at [NUH Clinical Innovation Office Setup](https://github.com/NUH-Clinical-Innovation-Office/setup) to install Node.js and configure your environment.
 
-### Testing
+## Installation
 
-- Unit testing with Vitest and React Testing Library
-- UI mode for interactive testing
-- Watch mode for development
+### Quick Setup (Recommended for New Projects)
 
-### Security
-
-- Comprehensive security headers (CSP, X-Frame-Options, etc.)
-- Content Security Policy configured
-- Environment variable validation with Zod
-- HTTPS-only image loading
-- **Trivy** security scanner for vulnerability detection in dependencies, containers, and IaC
-
-### CI/CD & Deployment
-
-- **GitHub Actions workflows** for staging, production, and feature branches
-- **Feature branch deployments** with automatic preview environments and cleanup
-- **Docker** support with Docker Compose
-- **Kubernetes** service account configuration for GitHub Actions
-- **HashiCorp Vault** integration for secure secrets management
-- **Cloudflare Tunnel** integration for secure external access
-
-## Getting Started
-
-### Prerequisites
-
-Follow the setup guide at [NUH Clinical Innovation Office Setup](https://github.com/NUH-Clinical-Innovation-Office/setup) to install:
-
-- Node.js >= 24.15.0
-- npm, yarn, pnpm, or bun
-
-### Quick Setup (Recommended)
-
-For new projects, use the automated setup script to configure your project:
+Use the automated setup script to configure your project:
 
 ```bash
 chmod +x setup.sh
@@ -105,12 +68,12 @@ The setup script will:
 
 **What gets updated:**
 
-- `package.json` - Project name
-- `Dockerfile` - GitHub repository URL
-- `helm/nextjs-app/values*.yaml` - Project name and ports
-- `README.md` - Project name references
-- `docs/**/*.md` - Documentation files
-- `docs/scripts/setup-vault-environments.sh` - Vault setup script
+- `package.json` — Project name
+- `Dockerfile` — GitHub repository URL
+- `helm/nextjs-app/values*.yaml` — Project name and ports
+- `README.md` — Project name references
+- `docs/**/*.md` — Documentation files
+- `docs/scripts/setup-vault-environments.sh` — Vault setup script
 
 **Requirements:**
 
@@ -122,63 +85,154 @@ After running the setup script, review the changes before committing.
 
 ### Manual Setup
 
-If you prefer manual configuration, follow these steps after cloning this repository:
+If you prefer manual configuration:
 
-1. Install dependencies:
+1. Install dependencies (this also sets up Husky git hooks via the `prepare` script):
 
 ```bash
 npm install
 ```
 
-This will automatically set up Husky git hooks via the `prepare` script.
-
-1. Configure environment variables:
+2. Configure environment variables:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Edit `.env.local` with your configuration. See [Environment Variables Guide](docs/ENVIRONMENT_VARIABLES.md) for details.
+Edit `.env.local` with your configuration. See the [Configuration](#configuration) section for details.
 
-### Running Locally
+## Configuration
 
-Start the development server:
+Environment variables are validated at runtime using Zod schemas in `src/lib/env.ts`. Access them via `import { env } from '@/lib/env'`.
 
-```bash
-npm run dev
+### Client Variables (browser-safe, `NEXT_PUBLIC_` prefix)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `NEXT_PUBLIC_APP_URL` | `string` | `http://localhost:3000` | Base URL of the application |
+| `NEXT_PUBLIC_API_URL` | `string` | `http://localhost:3000/api` | Public API endpoint |
+
+### Server Variables (not exposed to browser)
+
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `NODE_ENV` | `enum: development \| test \| production` | `development` | Runtime environment |
+| `API_URL` | `string` (optional) | — | Server-side API endpoint |
+| `API_SECRET` | `string` (optional, min 32 chars) | — | Server-side API authentication key |
+| `API_TIMEOUT` | `string` → `number` (positive) | `10000` | API request timeout in milliseconds |
+
+Additional variables (database, authentication, analytics, email, AWS S3) are available as commented templates in `src/lib/env.ts` and `.env.example` — uncomment and configure as needed.
+
+### Runtime Helpers
+
+The `env.ts` module also exports:
+
+- `isProduction` — `true` when `NODE_ENV === 'production'`
+- `isDevelopment` — `true` when `NODE_ENV === 'development'`
+- `isTest` — `true` when `NODE_ENV === 'test'`
+
+## Project Architecture
+
+This template follows a layered architecture:
+
+```
+Browser Request
+    │
+    ▼
+Next.js App Router (src/app/)
+    │   Server Components by default
+    │   Client Components for interactivity ('use client')
+    │
+    ├─── UI Layer (src/components/)
+    │     ├── atoms/     — Wrapped shadcn/ui primitives with cursor styling
+    │     ├── molecules/ — Composite components (Header, Footer, ModeToggle, showcases)
+    │     ├── providers/ — React Context providers (ThemeProvider)
+    │     └── ui/        — shadcn/ui base components (34 components, new-york style)
+    │
+    ├─── Logic Layer (src/lib/)
+    │     ├── env.ts     — Zod-validated environment variables
+    │     ├── atom.tsx   — createAtom() factory for wrapping UI components
+    │     └── utils.ts   — cn() Tailwind class merge utility
+    │
+    └─── Infrastructure (outside src/)
+          ├── .github/workflows/ — 11 CI/CD workflows
+          ├── helm/nextjs-app/   — Kubernetes Helm chart
+          ├── Dockerfile         — Multi-stage Docker build
+          └── docs/              — Deployment & infrastructure docs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+**Key design decisions:**
 
-The development server includes:
+- **Atomic Design**: Components follow atoms → molecules → pages composition. The `createAtom()` factory wraps shadcn/ui components with consistent cursor styling.
+- **Server-first rendering**: Pages use React Server Components by default; client components only where interactivity is needed.
+- **Standalone output**: Next.js configured with `output: 'standalone'` for optimal Docker container builds.
+- **Security by default**: Comprehensive HTTP headers, non-root containers, read-only root filesystem, Trivy scanning, and Vault secret injection.
 
-- Hot module replacement with Turbopack
-- Fast refresh for instant updates
-- TypeScript type checking
-- Auto-compilation on file changes
+## Project Structure
 
-### Available Scripts
+```text
+├── src/
+│   ├── app/                 # Next.js App Router pages and layouts
+│   │   ├── layout.tsx       # Root layout with fonts, ThemeProvider, env validation
+│   │   ├── page.tsx         # Home page (showcase of all components)
+│   │   ├── error.tsx        # Error boundary with retry/home buttons
+│   │   ├── global-error.tsx # Global error handler (inline styles, no Tailwind)
+│   │   ├── loading.tsx      # Loading spinner for route transitions
+│   │   └── globals.css      # Tailwind CSS v4 with NUHS brand colors
+│   ├── components/
+│   │   ├── atoms/           # 10 wrapped UI elements (Button, Checkbox, Input, etc.)
+│   │   ├── molecules/       # 10 composite components (Header, Footer, ModeToggle, showcases)
+│   │   ├── providers/       # Context providers (ThemeProvider)
+│   │   └── ui/              # 33 shadcn/ui base components (new-york style)
+│   └── lib/
+│       ├── atom.tsx         # createAtom() factory for consistent cursor styling
+│       ├── env.ts           # Zod-validated environment variables
+│       └── utils.ts         # cn() Tailwind merge utility
+├── docs/                    # Deployment and infrastructure documentation
+├── helm/nextjs-app/         # Helm chart with multi-environment values
+├── .github/workflows/       # 11 CI/CD workflows
+├── public/                  # Static assets (NUH logos, SVGs)
+├── Dockerfile               # Multi-stage Docker build (standalone output)
+├── docker-compose.yml       # Local containerized development
+├── setup.sh                 # Project setup script
+└── vitest.config.ts         # Test configuration with coverage thresholds
+```
+
+## Commands
+
+### Development
 
 ```bash
-# Development
 npm run dev              # Start development server with Turbopack
-npm run build           # Build production bundle
-npm start               # Start production server
+npm run build            # Build production bundle with Turbopack
+npm start                # Start production server
+```
 
-# Testing
-npm run test            # Run tests once
-npm run test:watch      # Run tests in watch mode
-npm run test:ui         # Open Vitest UI for interactive testing
+### Testing
 
-# Code Quality
-npm run lint            # Check code with Biome
-npm run format          # Format code with Biome
-npm run type-check      # Run TypeScript type checking
-npm run knip            # Check for unused dependencies
+```bash
+npm run test             # Run tests once with Vitest
+npm run test:watch       # Run tests in watch mode
+npm run test:ui          # Open Vitest UI for interactive testing
+npm run test:coverage    # Generate coverage report (60% threshold)
+```
 
-# Security Scanning
-npm run security-scan         # Run Trivy security scans on all project assets
-npm run security-scan:image   # Build and scan Docker image for vulnerabilities
+### Code Quality
+
+```bash
+npm run lint             # Check code with Biome
+npm run format           # Format code with Biome
+npm run type-check       # Run TypeScript type checking
+npm run knip             # Check for unused dependencies and code
+npm run check:all        # Run lint + type-check + knip (used by pre-commit hook)
+npm run analyze          # Analyze bundle size with @next/bundle-analyzer
+```
+
+### Security Scanning
+
+```bash
+npm run security-scan          # Run Trivy scans on dependencies, Dockerfile, and Helm charts
+npm run security-scan:image    # Build and scan Docker image for vulnerabilities
 ```
 
 ### Husky Git Hooks
@@ -187,25 +241,14 @@ This project uses [Husky](https://typicode.github.io/husky/) to enforce code qua
 
 #### Pre-commit Hook
 
-- Runs `npm run lint` before each commit
-- Ensures code passes linting checks before allowing commits
+- Runs `npm run check:all` (lint + type-check + knip) before each commit
+- Ensures code passes all quality checks before allowing commits
 
 #### Commit Message Hook
 
 - Validates commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format
 - Enforced via [commitlint](https://commitlint.js.org/)
-- Valid commit types:
-  - `feat`: New feature
-  - `fix`: Bug fix
-  - `docs`: Documentation changes
-  - `style`: Code style changes (formatting, etc.)
-  - `refactor`: Code refactoring
-  - `perf`: Performance improvements
-  - `test`: Adding or updating tests
-  - `build`: Build system or dependency changes
-  - `ci`: CI/CD changes
-  - `chore`: Other changes
-  - `revert`: Revert a previous commit
+- Valid commit types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 
 **Example valid commit messages:**
 
@@ -215,246 +258,97 @@ git commit -m "fix: resolve navigation bug"
 git commit -m "docs: update readme with setup instructions"
 ```
 
-**Testing if Husky is working:**
-
-```bash
-# This should fail (invalid commit message format)
-git commit --allow-empty -m "invalid message"
-
-# This should pass (valid format)
-git commit --allow-empty -m "test: verify husky setup"
-```
-
-## Security
-
-### Trivy Security Scanner
-
-This template includes [Trivy](https://trivy.dev), an open-source vulnerability scanner by Aqua Security. Trivy performs comprehensive security analysis across multiple layers of your application:
-
-**What Trivy Scans:**
-
-- **Dependencies (npm packages)**: Detects known vulnerabilities (CVEs) in your JavaScript/TypeScript dependencies
-- **Docker Images**: Scans container images for OS and application vulnerabilities
-- **Dockerfile**: Analyzes Dockerfile for misconfigurations and security best practices
-- **Kubernetes/Helm**: Checks Infrastructure-as-Code (IaC) for security issues and misconfigurations
-- **GitHub Actions**: Reviews CI/CD workflows for security risks
-
-**Security Scan Commands:**
-
-```bash
-# Comprehensive scan of all project assets (dependencies, Dockerfile, Helm charts, workflows, docker-compose)
-npm run security-scan
-
-# Build and scan the Docker image for vulnerabilities
-npm run security-scan:image
-```
-
-**Scan Coverage:**
-
-The `security-scan` command runs 3 scans:
-
-1. Project dependencies and configurations (`trivy fs . --skip-dirs docs`) - Scans npm packages, Dockerfiles, Helm charts, workflows, and other config files
-2. Dockerfile best practices (`trivy config Dockerfile`)
-3. Helm chart configurations (`trivy config helm/`)
-
-All scans report CRITICAL severity vulnerabilities only, filtering out noise from high/medium/low issues. The `docs/` directory is excluded from scanning as it contains sample/reference Kubernetes configurations with intentionally elevated CI/CD permissions.
-
-**Prerequisites:**
-
-Trivy must be installed on your system. Installation options:
-
-```bash
-# macOS (Homebrew)
-brew install trivy
-
-# Linux (Debian/Ubuntu)
-sudo apt-get install wget apt-transport-https gnupg lsb-release
-wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-sudo apt-get update
-sudo apt-get install trivy
-
-# Or download binary from https://github.com/aquasecurity/trivy/releases
-```
-
-See [Trivy Installation Guide](https://aquasecurity.github.io/trivy/latest/getting-started/installation/) for more options.
-
-### Security Headers
-
-This template includes security headers configured in `next.config.ts` to protect against common web vulnerabilities:
-
-**X-Frame-Options: DENY**
-
-- Prevents your site from being embedded in iframes
-- Protects against clickjacking attacks where attackers overlay invisible frames
-
-**X-Content-Type-Options: nosniff**
-
-- Prevents browsers from MIME-sniffing (guessing content types)
-- Forces browsers to respect the declared Content-Type, preventing script execution vulnerabilities
-
-**Referrer-Policy: origin-when-cross-origin**
-
-- Controls what referrer information is sent with requests
-- Sends full URL for same-origin requests, only origin for cross-origin requests
-
-**X-DNS-Prefetch-Control: on**
-
-- Enables DNS prefetching for external resources
-- Improves performance by resolving domain names before users click links
-
-**Strict-Transport-Security: max-age=31536000; includeSubDomains; preload**
-
-- Enforces HTTPS-only transport for all future requests (1 year duration)
-- Critical for preventing protocol downgrade attacks
-- Applies to all subdomains and included in HSTS preload lists
-
-**Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()**
-
-- Blocks access to sensitive browser APIs (camera, microphone, location)
-- Prevents malicious scripts from accessing these features
-
-**X-Permitted-Cross-Domain-Policies: none**
-
-- Prevents Adobe Flash/PDF from loading cross-domain content
-- Provides defense-in-depth for PDF viewers
-
-**Content-Security-Policy (CSP)**
-
-- Controls which resources can be loaded and executed
-- `default-src 'self'`: Only load resources from your domain
-- `script-src 'self' 'unsafe-eval' 'unsafe-inline'`: Allows inline scripts (permissive for template)
-- `style-src 'self' 'unsafe-inline'`: Allows inline styles
-- `img-src 'self' data: https:`: Images from your domain, data URIs, or any HTTPS source
-- `font-src 'self' data:`: Fonts from your domain or data URIs
-- `connect-src 'self'`: API calls only to your domain
-- `object-src 'none'`: Prevents plugin content
-- `base-uri 'self'`: Prevents base tag injection attacks
-- `form-action 'self'`: Prevents form hijacking
-- `frame-ancestors 'none'`: Additional clickjacking protection
-- `upgrade-insecure-requests`: Automatically upgrades HTTP to HTTPS
-
-**Note:** The CSP is intentionally permissive for a template. For production, tighten it by removing `'unsafe-inline'` and `'unsafe-eval'` based on your specific requirements. Implement nonce-based CSP for maximum security.
-
-## Project Structure
-
-```text
-├── src/
-│   ├── app/                 # Next.js App Router pages
-│   │   ├── page.tsx        # Home page
-│   │   ├── layout.tsx      # Root layout
-│   │   └── globals.css     # Global styles
-│   ├── components/
-│   │   ├── atoms/          # Basic UI elements
-│   │   ├── molecules/      # Composite components
-│   │   ├── providers/      # Context providers
-│   │   └── ui/             # shadcn/ui components
-│   └── lib/
-│       ├── utils.ts        # Utility functions
-│       └── env.ts          # Environment validation
-├── docs/                   # Documentation
-├── helm/                   # Helm charts for Kubernetes
-├── scripts/                # Utility scripts
-└── .github/workflows/      # CI/CD workflows
-```
-
-## Documentation
-
-### Setup & Infrastructure
-
-- [Kubernetes Setup Guide](docs/kubernetes-setup.md) - Overview of Kubernetes cluster setup options (Raspberry Pi vs AWS)
-- [Kubernetes on Raspberry Pi](docs/kubernetes-setup-raspberry-pi.md) - Self-hosted K3s cluster setup on Raspberry Pi
-- [Kubernetes on AWS with Terraform](docs/kubernetes-setup-aws.md) - Production-ready EKS cluster using Terraform IaC
-- [Helm & Kubernetes Guide](docs/helm-kubernetes-setup.md) - Complete guide to Helm package manager and chart deployment
-- [Vault Secrets Management](docs/vault-setup-and-deployment.md) - HashiCorp Vault integration for secure secrets across environments
-- [Cloudflare & GitHub Integration](docs/cloudflare-github-setup.md) - Comprehensive guide to Cloudflare Tunnel setup and GitHub Actions integration
-
-### Deployment & CI/CD
-
-- [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration, including feature branch deployments and workflow documentation
-
-### Configuration
-
-- [Cloudflare GitHub Setup](docs/cloudflare-github-setup.md) - Cloudflare Tunnel configuration and GitHub Actions integration
-- [Environment Variables Guide](.env.example) - Environment variable configuration template with detailed comments
-
-### AI Development
-
-- [CLAUDE.md](CLAUDE.md) - Project guidance for Claude Code AI assistant with essential commands, architecture patterns, and CI/CD infrastructure details
-- [Claude Code Superpowers](docs/superpowers/) - Custom AI agent workflows for brainstorming, planning, code review, and implementation tasks
-
-### Kubernetes Deployment
-
-The Helm chart in `helm/nextjs-app/` includes production-ready Kubernetes resources:
-
-**Core Resources:**
-
-- **Deployment**: Manages application pods with rolling updates
-- **Service**: NodePort service for pod networking
-- **ServiceAccount**: RBAC identity for pods
-- **HPA (Horizontal Pod Autoscaler)**: Auto-scales based on CPU/memory (disabled by default)
-- **Ingress**: Nginx ingress with Let's Encrypt TLS (disabled by default)
-- **PodDisruptionBudget**: Ensures availability during disruptions (disabled by default)
-
-**Environment-specific configurations:**
-
-- `values.yaml` - Base configuration (2 replicas, 500m CPU limit, 512Mi memory)
-- `values-feature.yaml` - Feature branch overrides
-- `values-staging.yaml` - Staging environment settings
-- `values-production.yaml` - Production environment settings
-
-**Cost Allocation Labels:**
-
-All environment configurations include `commonLabels` for cloud cost segregation and resource organization:
-
-```yaml
-commonLabels:
-  team: "frontend-team"
-  project: "pre-consult"
-  cost-center: "engineering"
-  environment: "production|staging|development"
-```
-
-These Kubernetes labels enable:
-
-- **Internal cost tracking**: Tools like Kubecost and OpenCost map pod-level resource usage to costs
-- **Resource organization**: Filter and group resources by team, project, or environment
-- **Compliance & governance**: Track resource ownership and enforce policies
-- **Cloud cost allocation**: When combined with cloud provider resource tags (EKS nodes, EBS volumes), enables cost breakdown in AWS Cost Explorer, GCP Billing, or Azure Cost Management
-
-**Note**: For complete AWS cost visibility, you must also tag your infrastructure resources (EKS node groups, volumes, load balancers) with matching tags in your Terraform/CloudFormation configuration.
-
-**High Availability with PodDisruptionBudget:**
-
-PodDisruptionBudget (PDB) prevents Kubernetes from disrupting too many pods during voluntary operations like node drains, rolling updates, or cluster scaling.
-
-Enable in production for zero-downtime deployments:
-
-```yaml
-# values-production.yaml
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 1        # Keep at least 1 pod running during disruptions
-  # maxUnavailable: 1    # Alternative: allow max 1 pod to be unavailable
-```
-
-**When to use:**
-
-- Production environments with `replicaCount >= 2`
-- Critical services requiring high availability
-- Clusters with frequent node maintenance or autoscaling
-
-**Configuration options:**
-
-- `minAvailable`: Guarantees minimum pod count (use for critical services)
-- `maxUnavailable`: Limits disruption scope (use for flexibility during updates)
-
-**Security features:**
-
-- Non-root user (UID 1001) with `runAsNonRoot: true`
-- Read-only root filesystem with `readOnlyRootFilesystem: true`
-- Dropped all capabilities with `capabilities.drop: [ALL]`
-- No privilege escalation with `allowPrivilegeEscalation: false`
+## Features
+
+### Core Framework
+
+- **Next.js 16** with App Router and Turbopack
+- **React 19** with latest features
+- **TypeScript 6** in strict mode with additional checks (`noUnusedLocals`, `noUnusedParameters`, `noUncheckedIndexedAccess`)
+- **Tailwind CSS 4** for styling with PostCSS
+- **Zod 4** for runtime environment variable validation
+
+### UI Components
+
+- **shadcn/ui** — 33 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
+- **Atoms** — 10 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
+- **Molecules** — 10 composite components (Header, Footer, ModeToggle, and 7 showcase sections)
+- **Radix UI** primitives for accessible components
+- **Lucide React** icons
+- **next-themes** for dark mode support with animated pill-style toggle (Framer Motion)
+- **Sonner** for toast notifications
+- **NUHS brand colors** — Dark Blue (#002f6c), Light Blue (#178fd7), Orange (#e57200), Red (#e4002b)
+
+### Developer Experience
+
+- **Biome** for fast linting and formatting (replaces ESLint + Prettier)
+- **Vitest 4** for unit testing with React Testing Library
+- **Husky** for git hooks with pre-commit quality gates
+- **Commitlint** for conventional commit messages
+- **Knip** for unused dependency and code detection
+- **@next/bundle-analyzer** for bundle size inspection
+- **Claude Code** integration with CLAUDE.md for AI-assisted development
+
+### Testing
+
+- Unit testing with Vitest 4 and React Testing Library
+- jsdom environment with global mocks (ResizeObserver, matchMedia)
+- Coverage thresholds: 60% for lines, functions, branches, and statements
+- UI mode for interactive testing
+- Watch mode for development
+- 7 test files with ~75 test cases
+
+### Security
+
+- Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
+- Environment variable validation with Zod at startup
+- HTTPS-only image loading and upgrade-insecure-requests
+- **Trivy** security scanner for vulnerability detection in dependencies, containers, and IaC
+- Non-root containers (UID 1001), read-only root filesystem, dropped capabilities
+- Vault Agent Injector for runtime secret injection (no secrets in manifests)
+
+### CI/CD & Deployment
+
+- **GitHub Actions workflows** for CI, staging, production, and feature branches
+- **Reusable workflows** (build, Docker, security scan) to reduce duplication
+- **Feature branch deployments** with automatic preview environments and cleanup
+- **Rollback workflows** for both staging and production
+- **Image cleanup** — weekly scheduled removal of old container images from GHCR
+- **Docker** support with multi-arch builds (amd64/arm64) and Docker Compose
+- **Kubernetes** service account configuration for GitHub Actions
+- **HashiCorp Vault** integration for secure secrets management
+- **Cloudflare Tunnel** integration for secure external access
+
+## Security Headers
+
+Configured in `next.config.ts` to protect against common web vulnerabilities:
+
+| Header | Value | Purpose |
+|--------|-------|---------|
+| `X-Frame-Options` | `DENY` | Prevents clickjacking via iframe embedding |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME-sniffing attacks |
+| `Referrer-Policy` | `origin-when-cross-origin` | Controls referrer information leakage |
+| `X-DNS-Prefetch-Control` | `on` | Enables DNS prefetching for performance |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | Enforces HTTPS (1 year, HSTS preload) |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), interest-cohort=()` | Blocks sensitive browser APIs |
+| `X-Permitted-Cross-Domain-Policies` | `none` | Prevents Flash/PDF cross-domain content loading |
+| `Content-Security-Policy` | Multi-directive policy | Controls resource loading (see below) |
+
+**Content Security Policy directives:**
+
+- `default-src 'self'` — Only load resources from your domain
+- `script-src 'self' 'unsafe-inline' 'unsafe-eval'` — Allows inline scripts (required for Next.js App Router)
+- `style-src 'self' 'unsafe-inline'` — Allows inline styles
+- `img-src 'self' data: https:` — Images from your domain, data URIs, or HTTPS sources
+- `font-src 'self' data:` — Fonts from your domain or data URIs
+- `connect-src 'self'` — API calls only to your domain
+- `object-src 'none'` — Prevents plugin content
+- `base-uri 'self'` — Prevents base tag injection
+- `form-action 'self'` — Prevents form hijacking
+- `frame-ancestors 'none'` — Additional clickjacking protection
+- `upgrade-insecure-requests` — Automatically upgrades HTTP to HTTPS
+
+**Note:** The CSP is intentionally permissive for a template. For production, implement nonce-based CSP via Next.js middleware. See [Next.js CSP documentation](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy).
 
 ## Deployment
 
@@ -473,100 +367,101 @@ Docker Compose is also available:
 docker-compose up
 ```
 
+The Docker image uses a multi-stage build:
+
+- **Builder stage**: Installs dependencies, builds the Next.js standalone output
+- **Runner stage**: Copies standalone output, runs as non-root user (`nextjs:nodejs`, UID/GID 1001)
+
 ### CI/CD
 
 This template includes GitHub Actions workflows for:
 
-- **CI Pipeline** (`ci.yml`) - Runs on all pull requests with build, lint, test, and type-check
-- **Staging deployment** (`staging-deploy.yml`) - Automatic deployment to staging environment on merge to main
-- **Production deployment** (`production-deploy.yml`) - Production deployments with approval gate
-- **Production rollback** (`production-rollback.yml`) - Quick rollback to previous production deployment
-- **Staging rollback** (`staging-rollback.yml`) - Quick rollback to previous staging deployment
-- **Feature branch deployment** (`feature-deploy.yml`) - Automatic preview deployments for feature branches
-- **Feature cleanup** (`feature-cleanup.yml`) - Auto-cleanup when feature branches are deleted
-- **Image cleanup** (`image-cleanup.yml`) - Scheduled cleanup of old container images (weekly on Sundays at 2 AM UTC)
+- **CI Pipeline** (`ci.yml`) — Runs on push to `main`: build, test, security scan, Docker build, staging deploy, and production deploy
+- **Staging deployment** (`staging-deploy.yml`) — Deployed automatically as part of the CI pipeline on main pushes
+- **Production deployment** (`production-deploy.yml`) — Deployed automatically as part of the CI pipeline on main pushes
+- **Production rollback** (`production-rollback.yml`) — Manual rollback to previous production deployment
+- **Staging rollback** (`staging-rollback.yml`) — Manual rollback to previous staging deployment
+- **Feature branch deployment** (`feature-deploy.yml`) — Automatic preview deployments for non-main branches
+- **Feature cleanup** (`feature-cleanup.yml`) — Auto-cleanup when feature branches are deleted
+- **Image cleanup** (`image-cleanup.yml`) — Weekly cleanup of old container images (Sundays 2 AM UTC)
 
 #### Reusable Workflows
 
-The template uses reusable workflows to reduce code duplication and ensure consistency:
+The template uses reusable workflows to reduce code duplication:
 
-**`reusable-build.yml`** - Shared build, test, and quality checks workflow
-
-- Runs setup, lint, test, knip, and Trivy security scanning in parallel
-- Caches `node_modules` for faster builds
-- Uploads security scan results to GitHub Security tab
-- Configurable Node.js version (default: 24.15.0)
-- Used by: `ci.yml`, `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
-
-**`reusable-docker.yml`** - Docker image build and push workflow
-
-- Multi-platform builds (linux/amd64, linux/arm64)
-- Automatic image tagging with branch name and commit SHA
-- GitHub Container Registry (ghcr.io) integration
-- Build cache optimization using GitHub Actions cache
-- Configurable platforms, registry, and push behavior
-- Outputs: `image_tag`, `image_name` for use in deployment workflows
-- Used by: `staging-deploy.yml`, `production-deploy.yml`, `feature-deploy.yml`
-
-**`reusable-security-scan.yml`** - Docker image security scanning workflow
-
-- Scans Docker images for CRITICAL and HIGH severity vulnerabilities
-- Generates SARIF output for GitHub Security tab integration
-- Produces table format output for build logs
-- Used by deployment workflows for pre-deployment security validation
-
-**Benefits**:
-
-- Single source of truth for build and Docker processes
-- Easier maintenance and updates across all workflows
-- Consistent behavior across environments (staging, production, feature branches)
+- **`reusable-build.yml`** — Shared build, lint, test, knip, and Trivy security scanning
+- **`reusable-docker.yml`** — Multi-platform Docker build and push to GHCR with caching
+- **`reusable-security-scan.yml`** — Docker image security scanning (CRITICAL + HIGH severity)
 
 #### Container Image Cleanup
 
-The `image-cleanup.yml` workflow automatically manages GitHub Container Registry storage by removing old and unused images:
+The `image-cleanup.yml` workflow automatically manages GHCR storage:
 
-**Schedule**: Runs weekly on Sundays at 2 AM UTC (configurable via cron, also supports manual trigger via `workflow_dispatch`)
-
-**Retention Policy**:
-
-- **Production images** (`main-*` tags): Keeps the latest 3 versions, deletes older ones
-- **Feature branch images**: Keeps images from the last 7 days, deletes older ones
+- **Production images** (`main-*` tags): Keeps latest 3 versions
+- **Feature branch images**: Keeps images from the last 7 days
 - **`latest` tag**: Always protected, never deleted
 - **Untagged images**: Always deleted immediately
 
-**How it works**:
+#### Feature Branch Deployments
 
-1. Fetches all image versions from GitHub Container Registry (with pagination support for >100 images)
-2. Identifies deletable images based on tag patterns and age
-3. Deletes images while respecting the retention policy
-4. Reports summary of deleted vs failed deletions
+Each feature branch gets automatic preview deployment:
 
-**Configuration** (in `image-cleanup.yml`):
+- Preview URL format: `https://{branch-name}-dev-{repo-name}.{domain}`
+- Deploys to separate Kubernetes namespace: `nextjs-{branch-name}`
+- Each deployment gets unique NodePort allocation (31000-32000 range)
+- Cloudflare Tunnel routes and DNS records are automatically created/updated
+- Cleanup automatically triggered when feature branch is deleted
+
+#### Kubernetes & Helm
+
+Helm charts located in `helm/nextjs-app/` with environment-specific values:
+
+- `values.yaml` — Base configuration (2 replicas, 500m CPU, 512Mi memory)
+- `values-feature.yaml` — Feature branch overrides (1 replica, 250m CPU, 256Mi memory)
+- `values-staging.yaml` — Staging environment (1 replica, NodePort 30002)
+- `values-production.yaml` — Production environment (1-5 replicas with HPA, NodePort 30001)
+
+**Helm resources:** Deployment, Service (NodePort), ServiceAccount, HPA (disabled by default), Ingress (disabled by default), PodDisruptionBudget (production only)
+
+**Security context:**
+
+- Non-root user (UID 1001) with `runAsNonRoot: true`
+- Read-only root filesystem with `readOnlyRootFilesystem: true`
+- Dropped all capabilities with `capabilities.drop: [ALL]`
+- No privilege escalation with `allowPrivilegeEscalation: false`
+
+**Cost allocation labels** included in all environment configurations for cloud cost segregation:
 
 ```yaml
-KEEP_LATEST_PRODUCTION: 3      # Number of main-* images to retain
-FEATURE_RETENTION_DAYS: 7      # Days to keep feature branch images
+commonLabels:
+  team: "frontend-team"
+  project: "nextjs-frontend-template"
+  cost-center: "engineering"
+  environment: "production|staging|development"
 ```
 
-This automation prevents registry storage bloat while ensuring recent and production images remain available.
+## Documentation
 
-## Learn More
+- [Features Inventory](docs/features.md) — Complete feature inventory with status
+- [Backend Integration](docs/backend-integration.md) — Backend API consumption reference
+- [Kubernetes Setup Guide](docs/kubernetes-setup.md) — Overview of Kubernetes cluster setup options
+- [Kubernetes on Raspberry Pi](docs/kubernetes-setup-raspberry-pi.md) — Self-hosted K3s cluster setup
+- [Kubernetes on AWS with Terraform](docs/kubernetes-setup-aws.md) — Production-ready EKS cluster using Terraform
+- [Helm & Kubernetes Guide](docs/helm-kubernetes-setup.md) — Helm package manager and chart deployment
+- [Vault Secrets Management](docs/vault-setup-and-deployment.md) — HashiCorp Vault integration
+- [Cloudflare & GitHub Integration](docs/cloudflare-github-setup.md) — Cloudflare Tunnel setup and GitHub Actions integration
 
-To learn more about the technologies used:
+## Contributing
 
-- [Next.js Documentation](https://nextjs.org/docs) - Learn about Next.js features and API
-- [React Documentation](https://react.dev) - Learn React 19 features
-- [Tailwind CSS](https://tailwindcss.com/docs) - Utility-first CSS framework
-- [shadcn/ui](https://ui.shadcn.com) - Re-usable components
-- [Vitest](https://vitest.dev) - Testing framework
-- [Biome](https://biomejs.dev) - Linting and formatting
-- [Trivy](https://trivy.dev) - Vulnerability scanner for dependencies, containers, and IaC
-- [Docker](https://docs.docker.com) - Containerization platform
-- [Kubernetes](https://kubernetes.io/docs) - Container orchestration
-- [Helm](https://helm.sh/docs) - Kubernetes package manager
-- [GitHub Actions](https://docs.github.com/en/actions) - CI/CD workflows
-- [Cloudflare](https://developers.cloudflare.com) - CDN and DNS services
-- [Claude Code](https://docs.claude.com/claude-code) - AI-powered development assistant
+This project uses the following conventions:
+
+- **Commit messages**: Follow [Conventional Commits](https://www.conventionalcommits.org/) format (enforced by commitlint)
+- **Code style**: Biome for linting and formatting (2-space indent, 100 char line width, single quotes)
+- **Component architecture**: Atomic Design pattern (atoms → molecules → pages)
+- **File naming**: kebab-case for component files (e.g., `mode-toggle.tsx`)
+- **Import paths**: Always use `@/` alias (e.g., `import { Button } from '@/components/ui/button'`)
+- **Type safety**: TypeScript strict mode with no unused locals/parameters
+- **Testing**: Colocate tests next to components (e.g., `button.test.tsx` next to `button.tsx`)
 
 ## License
 
