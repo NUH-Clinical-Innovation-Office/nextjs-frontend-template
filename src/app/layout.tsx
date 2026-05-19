@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { headers } from 'next/headers';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 // Import env to validate environment variables on application startup
@@ -20,11 +21,19 @@ export const metadata: Metadata = {
   description: 'National University Hospital - Singapore leading university hospital',
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Read per-request nonce attached by `src/middleware.ts`. Pass to any
+  // `<Script nonce={nonce} />` components added in the future so they are
+  // permitted by the nonce-based CSP.
+  const nonce = (await headers()).get('x-nonce') ?? '';
+  // Suppress unused warning until a Script consumes the nonce. Keeping the
+  // read here documents the wiring and ensures middleware → layout works.
+  void nonce;
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body
