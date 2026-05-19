@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { buildCsp } from '@/lib/csp';
 
-export function middleware(_request: NextRequest): NextResponse {
+export function proxy(_request: NextRequest): NextResponse {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const csp = buildCsp(nonce);
 
