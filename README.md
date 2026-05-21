@@ -296,7 +296,7 @@ git commit -m "docs: update readme with setup instructions"
 - Coverage thresholds: 60% for lines, functions, branches, and statements
 - UI mode for interactive testing
 - Watch mode for development
-- 7 test files with ~75 test cases
+- 9 test files with ~119 test cases
 
 ### Security
 
@@ -321,7 +321,7 @@ git commit -m "docs: update readme with setup instructions"
 
 ## Security Headers
 
-Configured in `next.config.ts` to protect against common web vulnerabilities:
+Configured in `src/proxy.ts` (Next.js 16 proxy/middleware) to protect against common web vulnerabilities. Headers are set at request time with a per-request nonce to enable strict Content Security Policy (CSP) without `unsafe-inline`.
 
 | Header | Value | Purpose |
 |--------|-------|---------|
@@ -332,23 +332,32 @@ Configured in `next.config.ts` to protect against common web vulnerabilities:
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | Enforces HTTPS (1 year, HSTS preload) |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), interest-cohort=()` | Blocks sensitive browser APIs |
 | `X-Permitted-Cross-Domain-Policies` | `none` | Prevents Flash/PDF cross-domain content loading |
-| `Content-Security-Policy` | Multi-directive policy | Controls resource loading (see below) |
+| `Content-Security-Policy` | Nonce-based strict policy | Controls resource loading (see below) |
 
-**Content Security Policy directives:**
+**Content Security Policy directives (nonce-based):**
 
 - `default-src 'self'` — Only load resources from your domain
-- `script-src 'self' 'unsafe-inline' 'unsafe-eval'` — Allows inline scripts (required for Next.js App Router)
-- `style-src 'self' 'unsafe-inline'` — Allows inline styles
+- `script-src 'self' 'nonce-<random>'` — Strict script loading with per-request nonce (no `unsafe-inline`)
+- `style-src 'self' 'nonce-<random>'` — Strict style loading with per-request nonce (no `unsafe-inline`)
 - `img-src 'self' data: https:` — Images from your domain, data URIs, or HTTPS sources
 - `font-src 'self' data:` — Fonts from your domain or data URIs
-- `connect-src 'self'` — API calls only to your domain
+- `connect-src 'self' <API_URL>` — API calls to your domain plus configured `API_URL` (if set)
 - `object-src 'none'` — Prevents plugin content
 - `base-uri 'self'` — Prevents base tag injection
 - `form-action 'self'` — Prevents form hijacking
 - `frame-ancestors 'none'` — Additional clickjacking protection
 - `upgrade-insecure-requests` — Automatically upgrades HTTP to HTTPS
 
-**Note:** The CSP is intentionally permissive for a template. For production, implement nonce-based CSP via Next.js middleware. See [Next.js CSP documentation](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy).
+**Nonce-based CSP Implementation:**
+
+- Nonce generated per request in `src/proxy.ts` using `crypto.randomUUID()`
+- Nonce passed to root layout via `x-nonce` request header
+- Nonce applied to `<script>` and `<style>` tags in `src/app/layout.tsx`
+- CSP built dynamically in `src/lib/csp.ts` with `API_URL` support for backend connectivity
+
+**Runtime Environment Resolution:**
+
+Headers are set in proxy middleware (not `next.config.ts`) so that environment variables like `API_URL` (injected by Kubernetes at pod startup) are available at request time without rebuilding the Docker image.
 
 ## Deployment
 

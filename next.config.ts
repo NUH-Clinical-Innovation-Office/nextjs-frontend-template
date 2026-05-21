@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react'],
   },
   // Security headers (including CSP with per-request nonces) are set in
-  // `src/middleware.ts`. Middleware enables runtime env resolution (e.g.
+  // `src/proxy.ts`. Proxy middleware enables runtime env resolution (e.g.
   // API_URL from Kubernetes) and per-request nonces to eliminate
   // `unsafe-inline` / `unsafe-eval` in the CSP.
 };

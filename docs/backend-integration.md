@@ -10,9 +10,17 @@ Next.js 16 with App Router. React 19.
 
 This template is a standalone frontend with **no backend API calls** currently implemented. The following configuration is pre-wired for when a backend is integrated.
 
-## Proxy Configuration
+## Proxy/Middleware Configuration
 
-No Next.js rewrites or proxy configuration is currently set. To add API proxying, configure `rewrites` in `next.config.ts`:
+This template uses Next.js 16 proxy middleware (`src/proxy.ts`, formerly `middleware.ts` in Next.js 15 and earlier) for:
+
+- **Security headers** — Setting CSP, X-Frame-Options, HSTS, and other security headers at request time
+- **Nonce-based CSP** — Generating per-request nonces for strict Content Security Policy without `unsafe-inline`
+- **Runtime environment resolution** — Reading `API_URL` and other env vars at request time (useful for Kubernetes-injected values)
+
+### Adding API Rewrites/Proxying
+
+To add API proxying to avoid CORS issues, add a `rewrites` function to `next.config.ts`:
 
 ```ts
 async rewrites() {
@@ -26,6 +34,10 @@ async rewrites() {
 ```
 
 This avoids exposing the backend URL to the browser and avoids CORS issues. Client-side code can then request `/api/...` and Next.js will proxy to the destination.
+
+### CSP and Backend Connectivity
+
+The proxy middleware in `src/proxy.ts` dynamically builds the CSP header using `src/lib/csp.ts`. When `API_URL` is set in the environment, it is automatically added to the `connect-src` directive to allow frontend-to-backend API calls.
 
 ## Environment Variables
 
