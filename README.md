@@ -147,7 +147,7 @@ Next.js App Router (src/app/)
     │     ├── atoms/     — Wrapped shadcn/ui primitives with cursor styling
     │     ├── molecules/ — Composite components (Header, Footer, ModeToggle, showcases)
     │     ├── providers/ — React Context providers (ThemeProvider)
-    │     └── ui/        — shadcn/ui base components (34 components, new-york style)
+    │     └── ui/        — shadcn/ui base components (32 components, new-york style)
     │
     ├─── Logic Layer (src/lib/)
     │     ├── env.ts     — Zod-validated environment variables
@@ -155,7 +155,7 @@ Next.js App Router (src/app/)
     │     └── utils.ts   — cn() Tailwind class merge utility
     │
     └─── Infrastructure (outside src/)
-          ├── .github/workflows/ — 11 CI/CD workflows
+          ├── .github/workflows/ — 12 CI/CD workflows
           ├── helm/nextjs-app/   — Kubernetes Helm chart
           ├── Dockerfile         — Multi-stage Docker build
           └── docs/              — Deployment & infrastructure docs
@@ -180,17 +180,17 @@ Next.js App Router (src/app/)
 │   │   ├── loading.tsx      # Loading spinner for route transitions
 │   │   └── globals.css      # Tailwind CSS v4 with NUHS brand colors
 │   ├── components/
-│   │   ├── atoms/           # 10 wrapped UI elements (Button, Checkbox, Input, etc.)
-│   │   ├── molecules/       # 10 composite components (Header, Footer, ModeToggle, showcases)
+│   │   ├── atoms/           # 13 wrapped UI elements (Button, Checkbox, Input, etc.)
+│   │   ├── molecules/       # 12 composite components (Header, Footer, ModeToggle, showcases)
 │   │   ├── providers/       # Context providers (ThemeProvider)
-│   │   └── ui/              # 33 shadcn/ui base components (new-york style)
+│   │   └── ui/              # 32 shadcn/ui base components (new-york style)
 │   └── lib/
 │       ├── atom.tsx         # createAtom() factory for consistent cursor styling
 │       ├── env.ts           # Zod-validated environment variables
 │       └── utils.ts         # cn() Tailwind merge utility
 ├── docs/                    # Deployment and infrastructure documentation
 ├── helm/nextjs-app/         # Helm chart with multi-environment values
-├── .github/workflows/       # 11 CI/CD workflows
+├── .github/workflows/       # 12 CI/CD workflows
 ├── public/                  # Static assets (NUH logos, SVGs)
 ├── Dockerfile               # Multi-stage Docker build (standalone output)
 ├── docker-compose.yml       # Local containerized development
@@ -270,9 +270,9 @@ git commit -m "docs: update readme with setup instructions"
 
 ### UI Components
 
-- **shadcn/ui** — 33 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
-- **Atoms** — 10 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
-- **Molecules** — 10 composite components (Header, Footer, ModeToggle, and 7 showcase sections)
+- **shadcn/ui** — 32 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
+- **Atoms** — 13 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
+- **Molecules** — 12 composite components (Header, Footer, ModeToggle, and 7 showcase sections)
 - **Radix UI** primitives for accessible components
 - **Lucide React** icons
 - **next-themes** for dark mode support with animated pill-style toggle (Framer Motion)

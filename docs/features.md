@@ -17,9 +17,9 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 33 shadcn/ui components (new-york style) | stable | Pre-built accessible UI primitives in src/components/ui/ |
-| 10 atom components | stable | Cursor-styled wrappers around shadcn/ui in src/components/atoms/ |
-| 10 molecule components | stable | Composed components including Header, Footer, ModeToggle, showcases |
+| 32 shadcn/ui components (new-york style) | stable | Pre-built accessible UI primitives in src/components/ui/ |
+| 13 atom components | stable | Cursor-styled wrappers around shadcn/ui in src/components/atoms/ |
+| 12 molecule components | stable | Composed components including Header, Footer, ModeToggle, showcases |
 | ThemeProvider with next-themes | stable | Light/dark/system theme switching via React context |
 | NUHS brand colors via oklch | stable | Custom color palette defined as CSS variables in globals.css |
 | Dark mode with animated pill toggle | stable | Framer Motion animated toggle in mode-toggle.tsx |
@@ -42,7 +42,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 7 test files with ~75 test cases | stable | Comprehensive test coverage across src/ |
+| 9 test files | stable | Comprehensive test coverage across src/ |
 | Coverage thresholds at 60% | stable | Minimum coverage enforced in vitest.config.ts |
 | jsdom environment with global mocks | stable | Browser API mocks configured in vitest.setup.ts |
 
@@ -62,7 +62,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 11 GitHub Actions workflows | stable | CI, deploys, rollbacks, cleanup, and reusable workflows |
+| 12 GitHub Actions workflows | stable | CI, deploys, rollbacks, cleanup, and reusable workflows |
 | Feature branch deployments | stable | Preview URLs for each feature branch |
 | Feature branch cleanup | stable | Automatic teardown when branches are deleted |
 | Staging deployment | stable | Auto-deploy to staging on merge to main |
