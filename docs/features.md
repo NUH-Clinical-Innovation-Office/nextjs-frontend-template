@@ -42,7 +42,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 7 test files with ~75 test cases | stable | Comprehensive test coverage across src/ |
+| 9 test files with ~102 test cases | stable | Comprehensive test coverage across src/ |
 | Coverage thresholds at 60% | stable | Minimum coverage enforced in vitest.config.ts |
 | jsdom environment with global mocks | stable | Browser API mocks configured in vitest.setup.ts |
 

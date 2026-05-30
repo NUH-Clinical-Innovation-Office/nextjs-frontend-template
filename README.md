@@ -296,7 +296,7 @@ git commit -m "docs: update readme with setup instructions"
 - Coverage thresholds: 60% for lines, functions, branches, and statements
 - UI mode for interactive testing
 - Watch mode for development
-- 7 test files with ~75 test cases
+- 9 test files with ~102 test cases
 
 ### Security
 
