@@ -180,10 +180,10 @@ Next.js App Router (src/app/)
 │   │   ├── loading.tsx      # Loading spinner for route transitions
 │   │   └── globals.css      # Tailwind CSS v4 with NUHS brand colors
 │   ├── components/
-│   │   ├── atoms/           # 10 wrapped UI elements (Button, Checkbox, Input, etc.)
-│   │   ├── molecules/       # 10 composite components (Header, Footer, ModeToggle, showcases)
+│   │   ├── atoms/           # 11 wrapped UI elements (Button, Checkbox, Input, etc.)
+│   │   ├── molecules/       # 12 composite components (Header, Footer, ModeToggle, showcases)
 │   │   ├── providers/       # Context providers (ThemeProvider)
-│   │   └── ui/              # 33 shadcn/ui base components (new-york style)
+│   │   └── ui/              # 34 shadcn/ui base components (new-york style)
 │   └── lib/
 │       ├── atom.tsx         # createAtom() factory for consistent cursor styling
 │       ├── env.ts           # Zod-validated environment variables
@@ -270,9 +270,9 @@ git commit -m "docs: update readme with setup instructions"
 
 ### UI Components
 
-- **shadcn/ui** — 33 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
-- **Atoms** — 10 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
-- **Molecules** — 10 composite components (Header, Footer, ModeToggle, and 7 showcase sections)
+- **shadcn/ui** — 34 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
+- **Atoms** — 11 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
+- **Molecules** — 12 composite components (Header, Footer, ModeToggle, and 9 showcase sections)
 - **Radix UI** primitives for accessible components
 - **Lucide React** icons
 - **next-themes** for dark mode support with animated pill-style toggle (Framer Motion)
@@ -296,7 +296,7 @@ git commit -m "docs: update readme with setup instructions"
 - Coverage thresholds: 60% for lines, functions, branches, and statements
 - UI mode for interactive testing
 - Watch mode for development
-- 7 test files with ~75 test cases
+- 9 test files with ~102 test cases
 
 ### Security
 
