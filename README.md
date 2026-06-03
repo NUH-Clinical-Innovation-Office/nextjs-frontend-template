@@ -180,8 +180,8 @@ Next.js App Router (src/app/)
 │   │   ├── loading.tsx      # Loading spinner for route transitions
 │   │   └── globals.css      # Tailwind CSS v4 with NUHS brand colors
 │   ├── components/
-│   │   ├── atoms/           # 11 wrapped UI elements (Button, Checkbox, Input, etc.)
-│   │   ├── molecules/       # 12 composite components (Header, Footer, ModeToggle, showcases)
+│   │   ├── atoms/           # 10 wrapped UI elements (Button, Checkbox, Input, etc.)
+│   │   ├── molecules/       # 10 composite components (Header, Footer, ModeToggle, showcases)
 │   │   ├── providers/       # Context providers (ThemeProvider)
 │   │   └── ui/              # 34 shadcn/ui base components (new-york style)
 │   └── lib/
@@ -271,8 +271,8 @@ git commit -m "docs: update readme with setup instructions"
 ### UI Components
 
 - **shadcn/ui** — 34 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
-- **Atoms** — 11 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
-- **Molecules** — 12 composite components (Header, Footer, ModeToggle, and 9 showcase sections)
+- **Atoms** — 10 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
+- **Molecules** — 10 composite components (Header, Footer, ModeToggle, and 7 showcase sections)
 - **Radix UI** primitives for accessible components
 - **Lucide React** icons
 - **next-themes** for dark mode support with animated pill-style toggle (Framer Motion)
@@ -296,11 +296,13 @@ git commit -m "docs: update readme with setup instructions"
 - Coverage thresholds: 60% for lines, functions, branches, and statements
 - UI mode for interactive testing
 - Watch mode for development
-- 9 test files with ~102 test cases
+- 9 test files with 102 test cases
 
 ### Security
 
-- Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
+- Per-request nonce-based CSP generated in `src/proxy.ts` (no `unsafe-inline` / `unsafe-eval` for scripts and styles)
+- Comprehensive security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy, etc.) attached by the proxy on every request
+- Runtime env resolution: the proxy reads `process.env.API_URL` so Kubernetes-injected values flow into the CSP without rebuilding the image
 - Environment variable validation with Zod at startup
 - HTTPS-only image loading and upgrade-insecure-requests
 - **Trivy** security scanner for vulnerability detection in dependencies, containers, and IaC
@@ -313,6 +315,7 @@ git commit -m "docs: update readme with setup instructions"
 - **Reusable workflows** (build, Docker, security scan) to reduce duplication
 - **Feature branch deployments** with automatic preview environments and cleanup
 - **Rollback workflows** for both staging and production
+- **GitHub Environments** for staging and production — production requires manual approval before deploy
 - **Image cleanup** — weekly scheduled removal of old container images from GHCR
 - **Docker** support with multi-arch builds (amd64/arm64) and Docker Compose
 - **Kubernetes** service account configuration for GitHub Actions
@@ -321,7 +324,7 @@ git commit -m "docs: update readme with setup instructions"
 
 ## Security Headers
 
-Configured in `next.config.ts` to protect against common web vulnerabilities:
+Configured in `src/proxy.ts` to protect against common web vulnerabilities. The proxy runs on every request and builds a fresh CSP, allowing runtime values (e.g. `API_URL` injected by Kubernetes) to be picked up without rebuilding the image.
 
 | Header | Value | Purpose |
 |--------|-------|---------|
@@ -332,23 +335,24 @@ Configured in `next.config.ts` to protect against common web vulnerabilities:
 | `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | Enforces HTTPS (1 year, HSTS preload) |
 | `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), interest-cohort=()` | Blocks sensitive browser APIs |
 | `X-Permitted-Cross-Domain-Policies` | `none` | Prevents Flash/PDF cross-domain content loading |
-| `Content-Security-Policy` | Multi-directive policy | Controls resource loading (see below) |
+| `Content-Security-Policy` | Multi-directive policy with per-request nonce | Controls resource loading (see below) |
+| `x-nonce` | Per-request base64 nonce | Echoes the nonce used in the CSP for use by `<Script nonce={…} />` |
 
-**Content Security Policy directives:**
+**Content Security Policy directives (built in `src/lib/csp.ts`):**
 
 - `default-src 'self'` — Only load resources from your domain
-- `script-src 'self' 'unsafe-inline' 'unsafe-eval'` — Allows inline scripts (required for Next.js App Router)
-- `style-src 'self' 'unsafe-inline'` — Allows inline styles
+- `script-src 'self' 'nonce-{nonce}'` — Allows only same-origin scripts carrying the per-request nonce
+- `style-src 'self' 'nonce-{nonce}'` — Allows only same-origin styles carrying the per-request nonce
 - `img-src 'self' data: https:` — Images from your domain, data URIs, or HTTPS sources
 - `font-src 'self' data:` — Fonts from your domain or data URIs
-- `connect-src 'self'` — API calls only to your domain
+- `connect-src 'self' [{API_URL}]` — API calls to your domain; the runtime `API_URL` is appended when set
 - `object-src 'none'` — Prevents plugin content
 - `base-uri 'self'` — Prevents base tag injection
 - `form-action 'self'` — Prevents form hijacking
 - `frame-ancestors 'none'` — Additional clickjacking protection
 - `upgrade-insecure-requests` — Automatically upgrades HTTP to HTTPS
 
-**Note:** The CSP is intentionally permissive for a template. For production, implement nonce-based CSP via Next.js middleware. See [Next.js CSP documentation](https://nextjs.org/docs/app/building-your-application/configuring/content-security-policy).
+The nonce is generated by the proxy and read by the root layout via the `x-nonce` request header, so any future `<Script nonce={…} />` in a Server Component will be permitted by the CSP without falling back to `unsafe-inline` or `unsafe-eval`.
 
 ## Deployment
 
@@ -378,7 +382,7 @@ This template includes GitHub Actions workflows for:
 
 - **CI Pipeline** (`ci.yml`) — Runs on push to `main`: build, test, security scan, Docker build, staging deploy, and production deploy
 - **Staging deployment** (`staging-deploy.yml`) — Deployed automatically as part of the CI pipeline on main pushes
-- **Production deployment** (`production-deploy.yml`) — Deployed automatically as part of the CI pipeline on main pushes
+- **Production deployment** (`production-deploy.yml`) — Triggered as part of the CI pipeline on main pushes; gated by the `production` GitHub Environment and requires manual approval before it can run
 - **Production rollback** (`production-rollback.yml`) — Manual rollback to previous production deployment
 - **Staging rollback** (`staging-rollback.yml`) — Manual rollback to previous staging deployment
 - **Feature branch deployment** (`feature-deploy.yml`) — Automatic preview deployments for non-main branches

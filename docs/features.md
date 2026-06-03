@@ -18,8 +18,8 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | Feature | Status | Description |
 |---------|--------|-------------|
 | 34 shadcn/ui components (new-york style) | stable | Pre-built accessible UI primitives in src/components/ui/ |
-| 11 atom components | stable | Cursor-styled wrappers around shadcn/ui in src/components/atoms/ |
-| 12 molecule components | stable | Composed components including Header, Footer, ModeToggle, showcases |
+| 10 atom components | stable | Cursor-styled wrappers around shadcn/ui in src/components/atoms/ |
+| 10 molecule components | stable | Composed components including Header, Footer, ModeToggle, showcases |
 | ThemeProvider with next-themes | stable | Light/dark/system theme switching via React context |
 | NUHS brand colors via oklch | stable | Custom color palette defined as CSS variables in globals.css |
 | Dark mode with animated pill toggle | stable | Framer Motion animated toggle in mode-toggle.tsx |
@@ -42,7 +42,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 9 test files with ~102 test cases | stable | Comprehensive test coverage across src/ |
+| 9 test files with 102 test cases | stable | Comprehensive test coverage across src/ |
 | Coverage thresholds at 60% | stable | Minimum coverage enforced in vitest.config.ts |
 | jsdom environment with global mocks | stable | Browser API mocks configured in vitest.setup.ts |
 
@@ -50,7 +50,9 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| HTTP security headers | stable | X-Frame-Options, CSP, Permissions-Policy in next.config.ts |
+| HTTP security headers | stable | X-Frame-Options, CSP, Permissions-Policy set by src/proxy.ts on every request |
+| Per-request nonce-based CSP | stable | Fresh base64 nonce per request, attached via `x-nonce` and embedded in `script-src` / `style-src` (no `unsafe-inline` / `unsafe-eval`) |
+| Runtime env resolution in CSP | stable | `src/proxy.ts` reads `process.env.API_URL` so Kubernetes-injected values flow into `connect-src` without rebuilding the image |
 | Trivy security scanning | stable | Scans deps, Dockerfile, and Helm charts in CI |
 | Non-root Docker containers | stable | Runs as UID 1001 in Dockerfile and Helm values |
 | Read-only root filesystem | stable | K8s security context enforces read-only root |
