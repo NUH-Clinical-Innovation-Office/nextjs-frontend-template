@@ -10,6 +10,8 @@ Next.js 16 with App Router. React 19.
 
 This template is a standalone frontend with **no backend API calls** currently implemented. The following configuration is pre-wired for when a backend is integrated.
 
+The proxy at `src/proxy.ts` already reads `process.env.API_URL` at request time and includes it in the CSP `connect-src` directive, so once a backend is wired up, the browser will be allowed to call it without further config.
+
 ## Proxy Configuration
 
 No Next.js rewrites or proxy configuration is currently set. To add API proxying, configure `rewrites` in `next.config.ts`:
