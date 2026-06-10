@@ -11,7 +11,7 @@ export function Header() {
           alt="NUH - National University Hospital"
           width={160}
           height={40}
-          style={{ height: 'auto' }}
+          style={{ width: 'auto', height: 'auto' }}
           className="dark:hidden"
           priority
         />
@@ -20,7 +20,7 @@ export function Header() {
           alt="NUH - National University Hospital"
           width={160}
           height={40}
-          style={{ height: 'auto' }}
+          style={{ width: 'auto', height: 'auto' }}
           className="hidden dark:block"
           priority
         />
