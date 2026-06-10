@@ -195,7 +195,7 @@ Next.js App Router (src/app/)
 ├── Dockerfile               # Multi-stage Docker build (standalone output)
 ├── docker-compose.yml       # Local containerized development
 ├── setup.sh                 # Project setup script
-└── vitest.config.ts         # Test configuration with coverage thresholds
+└── bunfig.toml              # bun test configuration (preload + coverage thresholds)
 ```
 
 ## Commands
@@ -211,9 +211,8 @@ bun start                # Start production server
 ### Testing
 
 ```bash
-bun run test             # Run tests once with Vitest
+bun run test             # Run tests once with bun test
 bun run test:watch       # Run tests in watch mode
-bun run test:ui          # Open Vitest UI for interactive testing
 bun run test:coverage    # Generate coverage report (60% threshold)
 ```
 
@@ -282,7 +281,7 @@ git commit -m "docs: update readme with setup instructions"
 ### Developer Experience
 
 - **Biome** for fast linting and formatting (replaces ESLint + Prettier)
-- **Vitest 4** for unit testing with React Testing Library
+- **bun test** for unit testing with React Testing Library
 - **Husky** for git hooks with pre-commit quality gates
 - **Commitlint** for conventional commit messages
 - **Knip** for unused dependency and code detection
@@ -291,10 +290,10 @@ git commit -m "docs: update readme with setup instructions"
 
 ### Testing
 
-- Unit testing with Vitest 4 and React Testing Library
-- jsdom environment with global mocks (ResizeObserver, matchMedia)
-- Coverage thresholds: 60% for lines, functions, branches, and statements
-- UI mode for interactive testing
+- Unit testing with `bun test` and React Testing Library
+- happy-dom environment with global mocks (ResizeObserver, matchMedia)
+- jest-dom matchers augmented onto `bun:test`
+- Coverage thresholds: 60% (lines and functions)
 - Watch mode for development
 - 9 test files with 102 test cases
 

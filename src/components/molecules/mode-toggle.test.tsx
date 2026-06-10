@@ -1,7 +1,6 @@
+import { beforeEach, describe, expect, it, vi } from 'bun:test';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ModeToggle } from './mode-toggle';
 
 const mockSetTheme = vi.fn();
 let mockResolvedTheme = 'light';
@@ -12,6 +11,9 @@ vi.mock('next-themes', () => ({
     setTheme: mockSetTheme,
   }),
 }));
+
+// Import after mock.module registration (bun does not hoist mocks like vitest)
+const { ModeToggle } = await import('./mode-toggle');
 
 beforeEach(() => {
   mockSetTheme.mockClear();

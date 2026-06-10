@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
+import { afterEach, mock } from 'bun:test';
 import { cleanup } from '@testing-library/react';
-import { afterEach, vi } from 'vitest';
 
 // Cleanup after each test case
 afterEach(() => {
@@ -18,14 +18,14 @@ window.ResizeObserver = ResizeObserverMock;
 // Mock window.matchMedia for theme provider
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: vi.fn().mockImplementation((query) => ({
+  value: mock((query: string) => ({
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-    dispatchEvent: vi.fn(),
+    addListener: mock(),
+    removeListener: mock(),
+    addEventListener: mock(),
+    removeEventListener: mock(),
+    dispatchEvent: mock(),
   })),
 });
