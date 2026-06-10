@@ -33,7 +33,7 @@
     "**/node_modules": true,
     "**/.next": true,
     "**/out": true,
-    "**/package-lock.json": true,
+    "**/bun.lock": true,
     "**/*.tsbuildinfo": true
   },
 

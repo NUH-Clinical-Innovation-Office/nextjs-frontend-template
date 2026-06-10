@@ -131,7 +131,7 @@ export function ModeToggle() {
 
 **Characteristics**:
 
-- Installed via `npx shadcn@latest add <component>`
+- Installed via `bunx shadcn@latest add <component>`
 - Based on Radix UI primitives
 - Fully customizable (you own the code)
 - Styled with Tailwind CSS using `class-variance-authority` (CVA)
@@ -298,7 +298,7 @@ This project uses `class` strategy for dark mode:
 → **Search shadcn/ui components** and install:
 
 ```bash
-npx shadcn@latest add [component-name]
+bunx shadcn@latest add [component-name]
 ```
 
 - Browse available components: <https://ui.shadcn.com/docs/components>
@@ -411,7 +411,7 @@ src/
 Run tests:
 
 ```bash
-npm run test              # Run once
-npm run test:watch        # Watch mode
-npm run test:ui           # Interactive UI
+bun run test              # Run once
+bun run test:watch        # Watch mode
+bun run test:ui           # Interactive UI
 ```

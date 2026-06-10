@@ -96,7 +96,10 @@ scripts/
 .DS_Store
 *.pem
 *.log
+# Allow bun.lock into the build context; other lockfiles (npm/yarn/pnpm) stay excluded
 *.lock
+!bun.lock
+!bun.lockb
 .husky
 .commitlintrc*
 commitlint.config.*

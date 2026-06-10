@@ -11,33 +11,33 @@ This is a Next.js 16 frontend template with TypeScript, Tailwind CSS 4, and comp
 ### Development
 
 ```bash
-npm install           # Install dependencies (automatically sets up Husky)
-npm run dev          # Start dev server with Turbopack at http://localhost:3000
-npm run build        # Build production bundle with Turbopack
-npm start            # Start production server
+bun install           # Install dependencies (automatically sets up Husky)
+bun run dev          # Start dev server with Turbopack at http://localhost:3000
+bun run build        # Build production bundle with Turbopack
+bun start            # Start production server
 ```
 
 ### Testing
 
 ```bash
-npm run test            # Run tests once with Vitest
-npm run test:watch      # Run tests in watch mode
-npm run test:ui         # Open Vitest UI for interactive testing
-npm run test:coverage   # Generate coverage report
+bun run test            # Run tests once with Vitest
+bun run test:watch      # Run tests in watch mode
+bun run test:ui         # Open Vitest UI for interactive testing
+bun run test:coverage   # Generate coverage report
 ```
 
 ### Code Quality
 
 ```bash
-npm run lint          # Check code with Biome
-npm run format        # Format code with Biome
-npm run type-check    # Run TypeScript type checking
-npm run knip          # Check for unused dependencies
+bun run lint          # Check code with Biome
+bun run format        # Format code with Biome
+bun run type-check    # Run TypeScript type checking
+bun run knip          # Check for unused dependencies
 ```
 
 ### Git Hooks (via Husky)
 
-- **Pre-commit**: Runs `npm run lint` automatically
+- **Pre-commit**: Runs `bun run lint` automatically
 - **Commit-msg**: Validates commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) format
   - Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
   - Example: `feat: add user authentication` or `fix: resolve navigation bug`
@@ -170,7 +170,7 @@ Extensive setup guides available in `docs/`:
 
 ## Important Notes
 
-- Always run `npm install` after cloning to set up Husky hooks
+- Always run `bun install` after cloning to set up Husky hooks
 - Environment variables must be copied from `.env.example` to `.env.local`
 - Commit messages are validated - use conventional commit format
 - Pre-commit hooks will block commits if linting fails

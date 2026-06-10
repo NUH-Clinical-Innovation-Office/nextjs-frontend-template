@@ -1389,7 +1389,7 @@ spec:
       containers:
       - name: db-migration
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
-        command: ['npm', 'run', 'migrate']
+        command: ['bun', 'run', 'migrate']
       restartPolicy: Never
 ```
 
