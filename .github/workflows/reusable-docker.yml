@@ -117,7 +117,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NODE_VERSION=${{ inputs.node_version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             REVISION=${{ github.sha }}
             VERSION=${{ steps.package-version.outputs.VERSION }}

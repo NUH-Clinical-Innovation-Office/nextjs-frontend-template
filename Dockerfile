@@ -1,12 +1,6 @@
 # Stage 1: Builder
-# NODE_VERSION is extracted from package.json at build time
-ARG NODE_VERSION
-
-FROM node:${NODE_VERSION}-alpine AS builder
+FROM oven/bun:1-alpine AS builder
 WORKDIR /app
-
-# Install bun
-RUN npm install -g bun@latest
 
 # Install all dependencies including dev dependencies for build
 COPY package.json bun.lock ./
@@ -19,7 +13,7 @@ COPY . .
 RUN bun run build
 
 # Stage 2: Runner
-FROM node:${NODE_VERSION}-alpine AS runner
+FROM oven/bun:1-alpine AS runner
 
 # Metadata arguments
 ARG BUILD_DATE
@@ -34,7 +28,7 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${REVISION}" \
       org.opencontainers.image.title="Next.js Frontend Template" \
       org.opencontainers.image.description="Production-ready Next.js application" \
-      org.opencontainers.image.base.name="node:${NODE_VERSION}-alpine"
+      org.opencontainers.image.base.name="oven/bun:1-alpine"
 
 WORKDIR /app
 
@@ -58,4 +52,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Start the application
-CMD ["node", "server.js"]
+CMD ["bun", "server.js"]
