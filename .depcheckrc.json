@@ -7,13 +7,11 @@
     "@tailwindcss/postcss",
     "@testing-library/jest-dom",
     "@testing-library/user-event",
-    "@vitejs/plugin-react",
-    "happy-dom",
+    "@happy-dom/global-registrator",
+    "@types/bun",
     "husky",
-    "jsdom",
     "tailwindcss",
-    "tw-animate-css",
-    "@vitest/coverage-v8"
+    "tw-animate-css"
   ],
   "ignore-patterns": ["dist", ".next", "coverage", "node_modules"]
 }

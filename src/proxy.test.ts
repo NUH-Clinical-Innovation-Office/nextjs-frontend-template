@@ -1,5 +1,5 @@
+import { describe, expect, it } from 'bun:test';
 import { NextRequest } from 'next/server';
-import { describe, expect, it } from 'vitest';
 import { proxy } from './proxy';
 
 function makeRequest(path = '/'): NextRequest {

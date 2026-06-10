@@ -31,7 +31,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | Feature | Status | Description |
 |---------|--------|-------------|
 | Biome linting and formatting | stable | Fast unified linter and formatter via biome.json |
-| Vitest 4 with React Testing Library | stable | Component and unit testing with jsdom environment |
+| bun test with React Testing Library | stable | Component and unit testing with happy-dom environment |
 | Husky pre-commit hooks | stable | Runs check:all before each commit |
 | Commitlint for conventional commits | stable | Validates commit message format (feat, fix, docs, etc.) |
 | Knip for unused code detection | stable | Finds unused dependencies, exports, and files |
@@ -43,8 +43,8 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | Feature | Status | Description |
 |---------|--------|-------------|
 | 9 test files with 102 test cases | stable | Comprehensive test coverage across src/ |
-| Coverage thresholds at 60% | stable | Minimum coverage enforced in vitest.config.ts |
-| jsdom environment with global mocks | stable | Browser API mocks configured in vitest.setup.ts |
+| Coverage thresholds at 60% | stable | Minimum coverage enforced in bunfig.toml |
+| happy-dom environment with global mocks | stable | Browser API mocks configured in test-setup.ts |
 
 ## Security
 

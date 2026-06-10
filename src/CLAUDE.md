@@ -413,5 +413,5 @@ Run tests:
 ```bash
 bun run test              # Run once
 bun run test:watch        # Watch mode
-bun run test:ui           # Interactive UI
+bun run test:coverage     # With coverage
 ```

@@ -1,6 +1,6 @@
+import { describe, expect, it } from 'bun:test';
 import { screen } from '@testing-library/dom';
 import { render } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
 import {
   Card,
   CardAction,

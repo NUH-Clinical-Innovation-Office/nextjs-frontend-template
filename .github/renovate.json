@@ -34,7 +34,7 @@
     },
     {
       "description": "Group all testing packages together",
-      "matchPackagePatterns": ["vitest", "^@testing-library/", "^@vitest/", "jsdom"],
+      "matchPackagePatterns": ["^@testing-library/", "^@happy-dom/", "happy-dom"],
       "groupName": "Testing"
     },
     {

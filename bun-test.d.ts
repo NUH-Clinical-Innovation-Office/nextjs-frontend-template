@@ -1,0 +1,7 @@
+import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
+
+// Augment bun:test's expect matchers with @testing-library/jest-dom matchers.
+declare module 'bun:test' {
+  interface Matchers<T> extends TestingLibraryMatchers<unknown, T> {}
+  interface AsymmetricMatchers extends TestingLibraryMatchers<unknown, unknown> {}
+}

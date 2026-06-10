@@ -20,9 +20,8 @@ bun start            # Start production server
 ### Testing
 
 ```bash
-bun run test            # Run tests once with Vitest
+bun run test            # Run tests once with bun test
 bun run test:watch      # Run tests in watch mode
-bun run test:ui         # Open Vitest UI for interactive testing
 bun run test:coverage   # Generate coverage report
 ```
 
@@ -61,7 +60,7 @@ bun run knip          # Check for unused dependencies
 
 ### Path Aliases
 
-- `@/` resolves to `src/` directory (configured in both `tsconfig.json` and `vitest.config.ts`)
+- `@/` resolves to `src/` directory (configured in `tsconfig.json`, read natively by `bun test`)
 
 ## CI/CD Infrastructure
 
@@ -133,12 +132,14 @@ bun run knip          # Check for unused dependencies
 - Path alias: `@/*` → `src/*`
 - Node version: 26.3.0
 
-### Testing (Vitest)
+### Testing (bun test)
 
-- Environment: jsdom (for React component testing)
-- React Testing Library integrated
-- Setup file: `vitest.setup.ts`
-- CSS support enabled
+- Test runner: `bun test` (native, no Vitest)
+- Environment: happy-dom via `@happy-dom/global-registrator` (preloaded in `happydom.ts`)
+- React Testing Library + jest-dom matchers (augmented onto `bun:test` in `bun-test.d.ts`)
+- Setup file: `test-setup.ts` (jest-dom import, ResizeObserver/matchMedia mocks, `afterEach(cleanup)`)
+- Config in `bunfig.toml`: preload files + 60% coverage threshold (text + lcov reporters)
+- Module mocks use `vi.mock` (bun's Vitest-compatible alias); bun does NOT hoist mocks, so mocked modules must be dynamically imported after the `vi.mock` call
 
 ## Security
 
