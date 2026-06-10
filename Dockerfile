@@ -6,7 +6,7 @@ FROM node:${NODE_VERSION}-alpine AS builder
 WORKDIR /app
 
 # Install bun
-RUN npm install -g bun@1.3.14
+RUN npm install -g bun@latest
 
 # Install all dependencies including dev dependencies for build
 COPY package.json bun.lock ./
