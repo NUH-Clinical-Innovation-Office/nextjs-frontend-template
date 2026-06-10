@@ -39,7 +39,7 @@ Key differentiators:
 
 ## Prerequisites
 
-- **Node.js** >= 24.15.0
+- **Node.js** >= 26.3.0
 - **npm** (or yarn, pnpm, bun)
 - **Trivy** (optional, for security scanning) — [Installation Guide](https://aquasecurity.github.io/trivy/latest/getting-started/installation/)
 - **Docker** (optional, for containerized builds)

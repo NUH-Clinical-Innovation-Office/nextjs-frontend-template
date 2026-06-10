@@ -6,7 +6,6 @@ describe('buildCsp', () => {
 
   afterEach(() => {
     if (originalEnv === undefined) {
-      // biome-ignore lint/performance/noDelete: process.env requires delete to truly unset a key
       delete process.env.API_URL;
     } else {
       process.env.API_URL = originalEnv;
@@ -53,7 +52,6 @@ describe('buildCsp', () => {
   });
 
   it('uses only self in connect-src when API_URL is unset', () => {
-    // biome-ignore lint/performance/noDelete: process.env requires delete to truly unset a key
     delete process.env.API_URL;
     const csp = buildCsp('abc123', 'production');
     expect(csp).toContain("connect-src 'self'");
