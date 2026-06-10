@@ -5,15 +5,18 @@ ARG NODE_VERSION
 FROM node:${NODE_VERSION}-alpine AS builder
 WORKDIR /app
 
+# Install bun
+RUN npm install -g bun@1.3.14
+
 # Install all dependencies including dev dependencies for build
-COPY package.json package-lock.json ./
-RUN npm ci && npm cache clean --force
+COPY package.json bun.lockb ./
+RUN bun install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
 # Build the application
-RUN npm run build
+RUN bun run build
 
 # Stage 2: Runner
 FROM node:${NODE_VERSION}-alpine AS runner
