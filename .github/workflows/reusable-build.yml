@@ -39,7 +39,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lockb') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
         if: steps.cache-node-modules.outputs.cache-hit != 'true'
@@ -63,7 +63,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lockb') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Run lint
         run: bun run lint
@@ -86,7 +86,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lockb') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Run tests
         run: bun run test
@@ -109,7 +109,7 @@ jobs:
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lockb') }}
+          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Run knip
         run: bun run knip
