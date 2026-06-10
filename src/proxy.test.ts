@@ -74,3 +74,26 @@ describe('proxy', () => {
     expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toBe('none');
   });
 });
+
+describe('proxy matcher config', () => {
+  it('excludes Next.js dev internals (HMR, suggestion overlay, source maps)', async () => {
+    // Re-import the module to read the exported `config` object.
+    const mod = await import('./proxy');
+    const matcher = (mod.config as { matcher: string[] }).matcher[0] as string;
+    // Each prefix we want excluded should appear inside the negative lookahead
+    // group: `(?<!prefix1|prefix2|...)`.
+    for (const prefix of ['_next/static', '_next/image', '_next/data', 'favicon.ico', '__nextjs']) {
+      expect(matcher).toContain(prefix);
+    }
+  });
+
+  it('does not exclude `/docs/` paths (the app does not own that route)', async () => {
+    const mod = await import('./proxy');
+    const matcher = (mod.config as { matcher: string[] }).matcher[0] as string;
+    // The matcher is a single negative-lookahead regex. We assert that the
+    // literal substring `docs/` is NOT one of the excluded prefixes, so
+    // legitimate app routes under `/docs` would still get CSP + nonce.
+    const excludedGroup = matcher.match(/\(\?!([^)]+)\)/)?.[1] ?? '';
+    expect(excludedGroup.split('|')).not.toContain('docs/');
+  });
+});

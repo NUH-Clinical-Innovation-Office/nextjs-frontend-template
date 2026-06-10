@@ -28,8 +28,17 @@ export function proxy(_request: NextRequest): NextResponse {
   return response;
 }
 
-// Exclude static assets and image optimisation routes — nonce generation
-// for them is wasted work and they don't render HTML that needs CSP.
+// Exclude static assets, image optimisation routes, and Next.js dev-server
+// internals (HMR websockets, the dev redirect/header-suggestion overlay, and
+// the Turbopack chunk paths that overlay references).
+//
+// Why this matters: the Next.js 16 dev server injects a suggestion overlay on
+// HTML responses whose assets live under `__nextjs_original-stack-frame`,
+// `__nextjs_source-map`, and similar internal paths. Without excluding them,
+// our proxy re-runs on each one, sets a fresh `x-nonce` header, and the dev
+// server's overlay then references Turbopack chunks at `/docs/-_XXXX.js` and
+// `/docs/vendors-...-autocomplete-...js` that Turbopack never compiles —
+// surfacing 404s in the dev console that have nothing to do with app code.
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|_next/data|favicon.ico|__nextjs).*)'],
 };
