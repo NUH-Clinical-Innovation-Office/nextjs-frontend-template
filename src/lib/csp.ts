@@ -16,11 +16,15 @@ export function buildCsp(nonce: string, nodeEnv: string = process.env.NODE_ENV ?
   const scriptSrc = isDev
     ? `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'`
     : `script-src 'self' 'nonce-${nonce}'`;
+  // Dev: Turbopack's HMR/dev-overlay injects <style> tags without our nonce,
+  // so style-src needs 'unsafe-inline' there. Browsers ignore 'unsafe-inline'
+  // when a nonce is present, so drop the nonce from style-src in dev.
+  const styleSrc = isDev ? "style-src 'self' 'unsafe-inline'" : `style-src 'self' 'nonce-${nonce}'`;
 
   return [
     "default-src 'self'",
     scriptSrc,
-    `style-src 'self' 'nonce-${nonce}'`,
+    styleSrc,
     "img-src 'self' data: https:",
     "font-src 'self' data:",
     connectSrc,

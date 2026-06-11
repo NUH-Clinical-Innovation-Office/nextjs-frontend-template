@@ -26,13 +26,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Read per-request nonce attached by `src/middleware.ts`. Pass to any
-  // `<Script nonce={nonce} />` components added in the future so they are
-  // permitted by the nonce-based CSP.
+  // Read per-request nonce attached by `src/proxy.ts`, passed to
+  // `next-themes`' inline theme-detection script so it's permitted by the
+  // nonce-based CSP.
   const nonce = (await headers()).get('x-nonce') ?? '';
-  // Suppress unused warning until a Script consumes the nonce. Keeping the
-  // read here documents the wiring and ensures middleware → layout works.
-  void nonce;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -46,6 +43,7 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
           storageKey="theme"
+          nonce={nonce}
         >
           {children}
         </ThemeProvider>

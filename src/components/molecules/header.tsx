@@ -10,8 +10,7 @@ export function Header() {
           src="/nuh-logo.png"
           alt="NUH - National University Hospital"
           width={160}
-          height={40}
-          style={{ width: 'auto', height: 'auto' }}
+          height={38}
           className="dark:hidden"
           priority
         />
@@ -19,8 +18,7 @@ export function Header() {
           src="/nuh-logo-dark.png"
           alt="NUH - National University Hospital"
           width={160}
-          height={40}
-          style={{ width: 'auto', height: 'auto' }}
+          height={38}
           className="hidden dark:block"
           priority
         />
