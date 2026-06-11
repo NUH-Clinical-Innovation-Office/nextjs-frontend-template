@@ -1,5 +1,6 @@
 'use client';
 
+import { CircleCheckIcon, InfoIcon, OctagonXIcon, TriangleAlertIcon } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/atoms/button';
@@ -29,11 +30,23 @@ export function FeedbackShowcase() {
       <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <SectionLabel>Alert</SectionLabel>
-          <Alert>
+          <Alert variant="info">
+            <InfoIcon />
             <AlertTitle>Information</AlertTitle>
             <AlertDescription>Lab results from 28 Apr are now available to view.</AlertDescription>
           </Alert>
+          <Alert variant="success">
+            <CircleCheckIcon />
+            <AlertTitle>Success</AlertTitle>
+            <AlertDescription>Appointment booked for 12 May, 10:30am.</AlertDescription>
+          </Alert>
+          <Alert variant="warning">
+            <TriangleAlertIcon />
+            <AlertTitle>Warning</AlertTitle>
+            <AlertDescription>Your session will expire in 5 minutes.</AlertDescription>
+          </Alert>
           <Alert variant="destructive">
+            <OctagonXIcon />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>File upload failed. Please check your connection.</AlertDescription>
           </Alert>
@@ -53,6 +66,16 @@ export function FeedbackShowcase() {
             </Button>
             <Button variant="secondary" onClick={() => toast.info('New lab results available')}>
               Info Toast
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() =>
+                toast.warning('Session expiring soon', {
+                  description: 'You will be logged out in 5 minutes',
+                })
+              }
+            >
+              Warning Toast
             </Button>
             <Button
               variant="secondary"
