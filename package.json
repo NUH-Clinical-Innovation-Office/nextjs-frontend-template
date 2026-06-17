@@ -21,6 +21,7 @@
     "security-scan:image": "echo 'Building and scanning Docker image...' && IMAGE_TAG=$(git rev-parse --short HEAD) && docker build -t nextjs-frontend-template:$IMAGE_TAG . && trivy image nextjs-frontend-template:$IMAGE_TAG --severity CRITICAL",
     "prepare": "husky",
     "knip": "knip",
+    "update:packages": "bun update --latest",
     "check:all": "bun run lint && bun run type-check && bun run knip"
   },
   "dependencies": {
