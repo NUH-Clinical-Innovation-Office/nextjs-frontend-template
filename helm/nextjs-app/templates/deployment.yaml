@@ -38,6 +38,11 @@ spec:
         - name: http
           containerPort: {{ .Values.service.targetPort }}
           protocol: TCP
+        {{- if .Values.metrics.enabled }}
+        - name: metrics
+          containerPort: {{ .Values.metrics.port }}
+          protocol: TCP
+        {{- end }}
         {{- if .Values.livenessProbe }}
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 12 }}
@@ -52,9 +57,21 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
-        {{- with .Values.env }}
+        {{- if or .Values.nodeOptions.maxOldSpaceSizeMiB .Values.metrics.enabled .Values.env }}
         env:
+          {{- if .Values.nodeOptions.maxOldSpaceSizeMiB }}
+            - name: NODE_OPTIONS
+              value: "--max-old-space-size={{ .Values.nodeOptions.maxOldSpaceSizeMiB }}"
+          {{- end }}
+          {{- if .Values.metrics.enabled }}
+            - name: METRICS_PORT
+              value: {{ .Values.metrics.port | quote }}
+            - name: METRICS_PATH
+              value: {{ .Values.metrics.path | quote }}
+          {{- end }}
+          {{- with .Values.env }}
           {{- toYaml . | nindent 12 }}
+          {{- end }}
         {{- end }}
         {{- with .Values.envFrom }}
         envFrom:

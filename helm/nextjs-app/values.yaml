@@ -62,10 +62,34 @@ ingress:
 resources:
   limits:
     cpu: 500m
-    memory: 512Mi
+    memory: 256Mi
   requests:
     cpu: 250m
-    memory: 512Mi
+    memory: 256Mi
+
+# Node.js runtime tuning.
+# Node has no JVM-style heap flag; cap the V8 old-space via NODE_OPTIONS so the
+# heap stays well under the container memory limit (avoids OOMKills before GC
+# kicks in). Set to ~75% of resources.limits.memory.
+# Default kept at 192 MiB so it never exceeds a real environment (production runs
+# a 256Mi limit -> 192). Override per-environment to track that environment's
+# memory limit; environments with more memory can raise this.
+nodeOptions:
+  maxOldSpaceSizeMiB: 192
+
+# Prometheus metrics exposure.
+# App serves metrics on a dedicated port (not via ingress). Discovery is via a
+# ServiceMonitor (Prometheus Operator / kube-prometheus-stack).
+metrics:
+  enabled: true
+  port: 9464
+  path: /metrics
+  serviceMonitor:
+    enabled: true
+    namespace: ""          # empty -> chart release namespace
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}             # extra labels if Prometheus needs a selector match
 
 autoscaling:
   enabled: false

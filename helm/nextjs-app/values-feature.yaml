@@ -49,6 +49,16 @@ resources:
     cpu: 150m
     memory: 256Mi
 
+# 192 MiB = 75% of the 256Mi memory limit above.
+nodeOptions:
+  maxOldSpaceSizeMiB: 192
+
+# Ephemeral feature env: still expose the metrics port, but skip the
+# ServiceMonitor (short-lived namespaces are not worth wiring into Prometheus).
+metrics:
+  serviceMonitor:
+    enabled: false
+
 ingress:
   enabled: false
 
