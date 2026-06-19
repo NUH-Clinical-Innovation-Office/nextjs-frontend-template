@@ -62,10 +62,10 @@ ingress:
 resources:
   limits:
     cpu: 500m
-    memory: 512Mi
+    memory: 256Mi
   requests:
     cpu: 250m
-    memory: 512Mi
+    memory: 256Mi
 
 # Node.js runtime tuning.
 # Node has no JVM-style heap flag; cap the V8 old-space via NODE_OPTIONS so the
