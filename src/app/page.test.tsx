@@ -6,7 +6,9 @@ import Home from './page';
 describe('Home', () => {
   it('should render the page', () => {
     render(<Home />);
-    expect(screen.getByText(/National University Hospital/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /National University Hospital/i }),
+    ).toBeInTheDocument();
   });
 
   it('should render NUH logo', () => {
