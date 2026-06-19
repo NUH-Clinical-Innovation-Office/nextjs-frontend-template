@@ -48,6 +48,15 @@ const serverSchema = z.object({
     .transform((val) => Number.parseInt(val, 10))
     .pipe(z.number().positive()),
 
+  // Prometheus metrics server (consumed by src/instrumentation.ts).
+  // Defaults to 9464 to match the ServiceMonitor selector in
+  // helm/nextjs-app/templates/servicemonitor.yaml.
+  METRICS_PORT: z
+    .string()
+    .default('9464')
+    .transform((val) => Number.parseInt(val, 10))
+    .pipe(z.number().min(1).max(65535)),
+
   // Database (uncomment when needed)
   // DATABASE_URL: z
   // 	.string()
