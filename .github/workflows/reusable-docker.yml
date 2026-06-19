@@ -3,10 +3,6 @@ name: Reusable Docker Build & Push
 on:
   workflow_call:
     inputs:
-      node_version:
-        description: "Node.js version to use (extracted from package.json by caller)"
-        required: false
-        type: string
       registry:
         description: "Container registry"
         required: false
@@ -117,7 +113,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NODE_VERSION=${{ inputs.node_version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             REVISION=${{ github.sha }}
             VERSION=${{ steps.package-version.outputs.VERSION }}

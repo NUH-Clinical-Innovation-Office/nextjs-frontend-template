@@ -3,11 +3,6 @@ name: Staging Rollback
 on:
   workflow_dispatch:
   workflow_call:
-    inputs:
-      node_version:
-        description: "Node.js version to use"
-        required: false
-        type: string
 
 jobs:
   rollback:

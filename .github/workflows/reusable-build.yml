@@ -2,11 +2,6 @@ name: Reusable Build Workflow
 
 on:
   workflow_call:
-    inputs:
-      node_version:
-        description: "Node.js version to use (extracted from package.json by caller)"
-        required: false
-        type: string
     outputs:
       cache_hit:
         description: "Whether build cache was hit"
@@ -23,13 +18,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
 
       - name: Cache node_modules
         id: cache-node-modules
@@ -51,13 +43,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
 
       - name: Restore node_modules cache
         uses: actions/cache@v5
@@ -77,13 +66,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
 
       - name: Restore node_modules cache
         uses: actions/cache@v5
@@ -103,13 +89,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
 
       - name: Restore node_modules cache
         uses: actions/cache@v5

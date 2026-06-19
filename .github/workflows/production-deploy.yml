@@ -7,10 +7,6 @@ on:
         description: "Docker image tag to deploy"
         required: true
         type: string
-      node_version:
-        description: "Node.js version to use"
-        required: false
-        type: string
 
 env:
   REGISTRY: ghcr.io
