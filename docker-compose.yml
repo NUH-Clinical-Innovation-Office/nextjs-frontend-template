@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        NODE_VERSION: 26.3.0
+        BUN_VERSION: 1
         BUILD_DATE: ${BUILD_DATE:-}
         VCS_REF: ${VCS_REF:-}
         VERSION: ${VERSION:-0.1.0}
@@ -26,9 +26,9 @@ services:
       test:
         [
           "CMD",
-          "node",
+          "bun",
           "-e",
-          "require('http').get('http://localhost:3000/', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+          "const r = await fetch('http://localhost:3000/'); process.exit(r.status === 200 ? 0 : 1)",
         ]
       interval: 30s
       timeout: 10s
