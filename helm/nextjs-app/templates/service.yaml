@@ -14,11 +14,5 @@ spec:
       {{- if and (eq .Values.service.type "NodePort") .Values.service.nodePort }}
       nodePort: {{ .Values.service.nodePort }}
       {{- end }}
-    {{- if .Values.metrics.enabled }}
-    - port: {{ .Values.metrics.port }}
-      targetPort: metrics
-      protocol: TCP
-      name: metrics
-    {{- end }}
   selector:
     {{- include "nextjs-app.selectorLabels" . | nindent 4 }}

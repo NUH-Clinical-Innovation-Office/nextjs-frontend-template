@@ -75,4 +75,13 @@ describe('metrics-server', () => {
     const res = await request(boundPort(), '/metrics', 'POST');
     expect(res.status).toBe(404);
   });
+
+  it('serves metrics at a custom path', async () => {
+    await handle?.close();
+    const { listen } = createMetricsServer({ port: 0, path: '/internal/metrics' });
+    handle = await listen();
+
+    expect((await request(boundPort(), '/metrics')).status).toBe(404);
+    expect((await request(boundPort(), '/internal/metrics')).status).toBe(200);
+  });
 });

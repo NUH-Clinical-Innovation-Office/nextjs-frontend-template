@@ -15,12 +15,13 @@ export const register = async () => {
   const { createMetricsServer } = await import('@/lib/metrics-server');
 
   const port = Number.parseInt(process.env.METRICS_PORT ?? '9464', 10);
-  const { listen } = createMetricsServer({ port });
+  const path = process.env.METRICS_PATH ?? '/metrics';
+  const { listen } = createMetricsServer({ port, path });
 
   try {
     const handle = await listen();
     // eslint-disable-next-line no-console -- intentional startup signal
-    console.log(`[metrics] listening on :${handle.port}/metrics`);
+    console.log(`[metrics] listening on :${handle.port}${path}`);
   } catch (err) {
     // eslint-disable-next-line no-console -- intentional startup failure signal
     console.error(`[metrics] failed to bind :${port}:`, (err as Error).message);

@@ -24,17 +24,19 @@ const DEFAULT_HOST = '0.0.0.0';
 export const createMetricsServer = (options?: {
   port?: number;
   host?: string;
+  path?: string;
   registry?: Registry;
 }) => {
   const requestedPort = options?.port ?? DEFAULT_PORT;
   const host = options?.host ?? DEFAULT_HOST;
+  const metricsPath = options?.path ?? '/metrics';
   const registry = options?.registry ?? new Registry();
 
   // Collect default Node.js process metrics (heap, GC, event loop lag, etc.).
   collectDefaultMetrics({ register: registry });
 
   const server = http.createServer(async (req, res) => {
-    if (req.url === '/metrics' && req.method === 'GET') {
+    if (req.url === metricsPath && req.method === 'GET') {
       try {
         const body = await registry.metrics();
         res.writeHead(200, { 'Content-Type': registry.contentType });
