@@ -1,9 +1,12 @@
 name: Feature Branch Deploy
 
 on:
-  push:
-    branches-ignore:
-      - main
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy"
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -13,58 +16,10 @@ env:
   PORT_MAPPING_NAMESPACE: default
 
 jobs:
-  extract-node-version:
-    name: Extract Node Version from package.json
-    runs-on: ubuntu-latest
-    outputs:
-      node_version: ${{ steps.get-node-version.outputs.node_version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Get Node version from package.json
-        id: get-node-version
-        run: echo "node_version=$(node -p "require('./package.json').engines.node")" >> $GITHUB_OUTPUT
-
-  build:
-    name: Build & Test
-    permissions:
-      contents: read
-      security-events: write
-    needs: extract-node-version
-    uses: ./.github/workflows/reusable-build.yml
-    with:
-      node_version: ${{ needs.extract-node-version.outputs.node_version }}
-
-  docker:
-    name: Build & Push Docker Image
-    needs: [build, extract-node-version]
-    permissions:
-      contents: read
-      packages: write
-    uses: ./.github/workflows/reusable-docker.yml
-    with:
-      node_version: ${{ needs.extract-node-version.outputs.node_version }}
-      platforms: linux/amd64,linux/arm64
-    secrets: inherit
-
-  security-scan:
-    name: Security Scan
-    needs: docker
-    permissions:
-      contents: read
-      packages: read
-      security-events: write
-    uses: ./.github/workflows/reusable-security-scan.yml
-    with:
-      image_tag: ${{ needs.docker.outputs.image_tag }}
-    secrets: inherit
-
   deploy:
     name: Deploy Feature Branch
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [docker, security-scan]
     permissions:
       contents: read
       packages: read
@@ -210,7 +165,7 @@ jobs:
             -n "$NAMESPACE" \
             --create-namespace \
             -f ./helm/nextjs-app/values-feature.yaml \
-            --set image.tag=${{ needs.docker.outputs.image_tag }} \
+            --set image.tag=${{ inputs.image_tag }} \
             --set image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER} \
             --set service.nodePort=${{ steps.allocate-port.outputs.PORT }} \
             --wait \

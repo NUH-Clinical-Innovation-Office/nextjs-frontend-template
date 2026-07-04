@@ -55,6 +55,19 @@ jobs:
       image_tag: ${{ needs.docker.outputs.image_tag }}
     secrets: inherit
 
+  deploy-feature:
+    name: Deploy Feature Branch
+    if: github.ref != 'refs/heads/main'
+    needs: [docker, security-scan]
+    permissions:
+      contents: read
+      packages: read
+      deployments: write
+    uses: ./.github/workflows/feature-deploy.yml
+    with:
+      image_tag: ${{ needs.docker.outputs.image_tag }}
+    secrets: inherit
+
   deploy-staging:
     name: Deploy to Staging
     if: github.ref == 'refs/heads/main'
