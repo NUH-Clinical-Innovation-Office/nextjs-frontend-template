@@ -143,8 +143,9 @@ jobs:
         run: |
           NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
 
-          # Create namespace if it doesn't exist
-          kubectl create namespace "$NAMESPACE" --dry-run=client -o yaml | kubectl apply -f -
+          # Create namespace only if it doesn't exist (avoids patching pre-existing ns)
+          kubectl get namespace "$NAMESPACE" &>/dev/null || \
+            kubectl create namespace "$NAMESPACE"
 
           # Copy ghcr-secret from main namespace to feature namespace only if it doesn't exist
           if ! kubectl get secret ghcr-secret -n "$NAMESPACE" &>/dev/null; then

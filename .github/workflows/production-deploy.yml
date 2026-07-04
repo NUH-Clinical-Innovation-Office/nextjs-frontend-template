@@ -90,8 +90,9 @@ jobs:
 
       - name: Copy GHCR secret to production namespace
         run: |
-          # Create namespace if it doesn't exist
-          kubectl create namespace ${{ github.event.repository.name }} --dry-run=client -o yaml | kubectl apply -f -
+          # Create namespace only if it doesn't exist (avoids patching pre-existing ns)
+          kubectl get namespace ${{ github.event.repository.name }} &>/dev/null || \
+            kubectl create namespace ${{ github.event.repository.name }}
 
           # Copy ghcr-secret from main namespace to production namespace only if it doesn't exist
           if ! kubectl get secret ghcr-secret -n ${{ github.event.repository.name }} &>/dev/null; then
