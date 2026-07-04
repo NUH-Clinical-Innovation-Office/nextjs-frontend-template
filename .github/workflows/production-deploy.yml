@@ -39,8 +39,11 @@ jobs:
         run: |
           MISSING_SECRETS=()
 
-          if [ -z "${{ secrets.KUBECONFIG_PROD }}" ]; then
-            MISSING_SECRETS+=("KUBECONFIG_PROD")
+          if [ -z "${{ secrets.KUBECONFIG_SERVER }}" ]; then
+            MISSING_SECRETS+=("KUBECONFIG_SERVER")
+          fi
+          if [ -z "${{ secrets.KUBECONFIG_TOKEN }}" ]; then
+            MISSING_SECRETS+=("KUBECONFIG_TOKEN")
           fi
           if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
             MISSING_SECRETS+=("CLOUDFLARE_API_TOKEN")
@@ -72,11 +75,18 @@ jobs:
 
       - name: Setup Kubernetes config
         env:
-          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG_PROD }}
+          KUBE_SERVER: ${{ secrets.KUBECONFIG_SERVER }}
+          KUBE_TOKEN: ${{ secrets.KUBECONFIG_TOKEN }}
         run: |
           mkdir -p ~/.kube
-          echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
+          touch ~/.kube/config
           chmod 600 ~/.kube/config
+          # Cluster API is fronted by a proxied Cloudflare tunnel hostname,
+          # so the client sees Cloudflare's trusted cert (normal TLS verify).
+          kubectl config set-cluster prod --server="$KUBE_SERVER"
+          kubectl config set-credentials deployer --token="$KUBE_TOKEN"
+          kubectl config set-context prod --cluster=prod --user=deployer
+          kubectl config use-context prod
 
       - name: Copy GHCR secret to production namespace
         run: |

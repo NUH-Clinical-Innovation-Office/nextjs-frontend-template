@@ -2,7 +2,6 @@ name: CI/CD
 
 on:
   push:
-    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -58,6 +57,7 @@ jobs:
 
   deploy-staging:
     name: Deploy to Staging
+    if: github.ref == 'refs/heads/main'
     needs: [docker, security-scan, extract-node-version]
     permissions:
       contents: read
@@ -71,7 +71,8 @@ jobs:
 
   deploy-production:
     name: Deploy to Production
-    needs: [docker, security-scan, extract-node-version]
+    if: github.ref == 'refs/heads/main'
+    needs: [deploy-staging, docker, security-scan, extract-node-version]
     permissions:
       contents: read
       packages: read
