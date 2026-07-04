@@ -95,8 +95,10 @@ bun run knip          # Check for unused dependencies
 
 ### Secrets Management
 
-- Required GitHub secrets for deployments:
-  - `KUBECONFIG`: Base64-encoded kubeconfig for cluster access
+- Required GitHub secrets for deployments (feature, staging, and production all
+  target the same cluster via a bearer token):
+  - `KUBECONFIG_SERVER`: Cluster API URL (Cloudflare tunnel hostname)
+  - `KUBECONFIG_TOKEN`: ServiceAccount bearer token for cluster access
   - `CLOUDFLARE_API_TOKEN`: API token with tunnel and DNS permissions
   - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID
   - `CLOUDFLARE_TUNNEL_ID`: Cloudflare Tunnel ID

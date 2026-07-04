@@ -2,7 +2,6 @@ name: CI/CD
 
 on:
   push:
-    branches: [main]
 
 env:
   REGISTRY: ghcr.io
@@ -56,8 +55,22 @@ jobs:
       image_tag: ${{ needs.docker.outputs.image_tag }}
     secrets: inherit
 
+  deploy-feature:
+    name: Deploy Feature Branch
+    if: github.ref != 'refs/heads/main'
+    needs: [docker, security-scan]
+    permissions:
+      contents: read
+      packages: read
+      deployments: write
+    uses: ./.github/workflows/feature-deploy.yml
+    with:
+      image_tag: ${{ needs.docker.outputs.image_tag }}
+    secrets: inherit
+
   deploy-staging:
     name: Deploy to Staging
+    if: github.ref == 'refs/heads/main'
     needs: [docker, security-scan, extract-node-version]
     permissions:
       contents: read
@@ -71,7 +84,8 @@ jobs:
 
   deploy-production:
     name: Deploy to Production
-    needs: [docker, security-scan, extract-node-version]
+    if: github.ref == 'refs/heads/main'
+    needs: [deploy-staging, docker, security-scan, extract-node-version]
     permissions:
       contents: read
       packages: read

@@ -1,9 +1,12 @@
 name: Feature Branch Deploy
 
 on:
-  push:
-    branches-ignore:
-      - main
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Docker image tag to deploy"
+        required: true
+        type: string
 
 env:
   REGISTRY: ghcr.io
@@ -13,58 +16,10 @@ env:
   PORT_MAPPING_NAMESPACE: default
 
 jobs:
-  extract-node-version:
-    name: Extract Node Version from package.json
-    runs-on: ubuntu-latest
-    outputs:
-      node_version: ${{ steps.get-node-version.outputs.node_version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Get Node version from package.json
-        id: get-node-version
-        run: echo "node_version=$(node -p "require('./package.json').engines.node")" >> $GITHUB_OUTPUT
-
-  build:
-    name: Build & Test
-    permissions:
-      contents: read
-      security-events: write
-    needs: extract-node-version
-    uses: ./.github/workflows/reusable-build.yml
-    with:
-      node_version: ${{ needs.extract-node-version.outputs.node_version }}
-
-  docker:
-    name: Build & Push Docker Image
-    needs: [build, extract-node-version]
-    permissions:
-      contents: read
-      packages: write
-    uses: ./.github/workflows/reusable-docker.yml
-    with:
-      node_version: ${{ needs.extract-node-version.outputs.node_version }}
-      platforms: linux/amd64,linux/arm64
-    secrets: inherit
-
-  security-scan:
-    name: Security Scan
-    needs: docker
-    permissions:
-      contents: read
-      packages: read
-      security-events: write
-    uses: ./.github/workflows/reusable-security-scan.yml
-    with:
-      image_tag: ${{ needs.docker.outputs.image_tag }}
-    secrets: inherit
-
   deploy:
     name: Deploy Feature Branch
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: [docker, security-scan]
     permissions:
       contents: read
       packages: read
@@ -81,8 +36,11 @@ jobs:
         run: |
           MISSING_SECRETS=()
 
-          if [ -z "${{ secrets.KUBECONFIG_STAGING }}" ]; then
-            MISSING_SECRETS+=("KUBECONFIG_STAGING")
+          if [ -z "${{ secrets.KUBECONFIG_SERVER }}" ]; then
+            MISSING_SECRETS+=("KUBECONFIG_SERVER")
+          fi
+          if [ -z "${{ secrets.KUBECONFIG_TOKEN }}" ]; then
+            MISSING_SECRETS+=("KUBECONFIG_TOKEN")
           fi
           if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
             MISSING_SECRETS+=("CLOUDFLARE_API_TOKEN")
@@ -114,11 +72,18 @@ jobs:
 
       - name: Setup Kubernetes config
         env:
-          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG_STAGING }}
+          KUBE_SERVER: ${{ secrets.KUBECONFIG_SERVER }}
+          KUBE_TOKEN: ${{ secrets.KUBECONFIG_TOKEN }}
         run: |
           mkdir -p ~/.kube
-          echo "$KUBECONFIG_CONTENT" | base64 -d > ~/.kube/config
+          touch ~/.kube/config
           chmod 600 ~/.kube/config
+          # Cluster API is fronted by a proxied Cloudflare tunnel hostname,
+          # so the client sees Cloudflare's trusted cert (normal TLS verify).
+          kubectl config set-cluster prod --server="$KUBE_SERVER"
+          kubectl config set-credentials deployer --token="$KUBE_TOKEN"
+          kubectl config set-context prod --cluster=prod --user=deployer
+          kubectl config use-context prod
 
       - name: Sanitize branch name
         id: branch-name
@@ -200,7 +165,7 @@ jobs:
             -n "$NAMESPACE" \
             --create-namespace \
             -f ./helm/nextjs-app/values-feature.yaml \
-            --set image.tag=${{ needs.docker.outputs.image_tag }} \
+            --set image.tag=${{ inputs.image_tag }} \
             --set image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER} \
             --set service.nodePort=${{ steps.allocate-port.outputs.PORT }} \
             --wait \
