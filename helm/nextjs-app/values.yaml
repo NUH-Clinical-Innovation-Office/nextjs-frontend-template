@@ -85,7 +85,9 @@ metrics:
   port: 9464
   path: /metrics
   serviceMonitor:
-    enabled: true
+    # Opt-in: requires Prometheus Operator CRDs (monitoring.coreos.com/v1).
+    # Enable per-env only where kube-prometheus-stack is installed.
+    enabled: false
     namespace: ""          # empty -> chart release namespace
     interval: 30s
     scrapeTimeout: 10s
