@@ -17,7 +17,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 34 shadcn/ui components (new-york style) | stable | Pre-built accessible UI primitives in src/components/ui/ |
+| 33 shadcn/ui components (new-york style) | stable | Pre-built accessible UI primitives in src/components/ui/ |
 | 10 atom components | stable | Cursor-styled wrappers around shadcn/ui in src/components/atoms/ |
 | 10 molecule components | stable | Composed components including Header, Footer, ModeToggle, showcases |
 | ThemeProvider with next-themes | stable | Light/dark/system theme switching via React context |
@@ -42,7 +42,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 9 test files with 102 test cases | stable | Comprehensive test coverage across src/ |
+| 10 test files covering proxy, CSP, metrics, page, atoms, molecules, and shadcn primitives | stable | Comprehensive test coverage across src/ |
 | Coverage thresholds at 60% | stable | Minimum coverage enforced in bunfig.toml |
 | happy-dom environment with global mocks | stable | Browser API mocks configured in test-setup.ts |
 
@@ -50,8 +50,8 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| HTTP security headers | stable | X-Frame-Options, CSP, Permissions-Policy set by src/proxy.ts on every request |
-| Per-request nonce-based CSP | stable | Fresh base64 nonce per request, attached via `x-nonce` and embedded in `script-src` / `style-src` (no `unsafe-inline` / `unsafe-eval`) |
+| HTTP security headers | stable | X-Frame-Options, X-Content-Type-Options, Referrer-Policy, X-DNS-Prefetch-Control, HSTS, Permissions-Policy, X-Permitted-Cross-Domain-Policies, and CSP set by src/proxy.ts on every request |
+| Per-request nonce-based CSP | stable | Fresh base64 nonce per request, attached via `x-nonce` and embedded in `script-src` / `style-src` (no `unsafe-inline` / `unsafe-eval` in production; dev adds `'unsafe-eval'` to scripts and `'unsafe-inline'` to styles for Turbopack HMR) |
 | Runtime env resolution in CSP | stable | `src/proxy.ts` reads `process.env.API_URL` so Kubernetes-injected values flow into `connect-src` without rebuilding the image |
 | Trivy security scanning | stable | Scans deps, Dockerfile, and Helm charts in CI |
 | Non-root Docker containers | stable | Runs as UID 1001 in Dockerfile and Helm values |
@@ -59,6 +59,14 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | Vault Agent Injector for secrets | stable | HashiCorp Vault annotations in Helm values |
 | Zod runtime env validation | stable | Type-safe environment variable parsing |
 | Image tag validation in Helm | stable | Prevents deployment of untagged images via _helpers.tpl |
+
+## Observability
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Prometheus metrics endpoint | stable | `src/instrumentation.ts` boots a dedicated HTTP server (prom-client) on `METRICS_PORT` / `METRICS_PATH` (defaults 9464 / `/metrics`) |
+| kube-prometheus-stack ServiceMonitor | stable | Helm chart ships a ServiceMonitor for Prometheus auto-discovery (disabled by default) |
+| METRICS_PORT / METRICS_PATH env vars | stable | Tunable via Zod-validated env in `src/lib/env.ts` |
 
 ## CI/CD
 
@@ -85,7 +93,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | HPA autoscaling | stable | Horizontal pod autoscaling for production workloads |
 | Cost allocation labels | stable | Kubernetes labels for cost tracking across all environments |
 | Docker Compose for local dev | stable | Containerized local development environment |
-| Health checks | stable | Liveness and readiness probes in Docker and Kubernetes |
+| Health checks | stable | Liveness and readiness probes in Kubernetes; `docker-compose.yml` ships a matching healthcheck for local containerized development |
 
 ## Project Setup
 

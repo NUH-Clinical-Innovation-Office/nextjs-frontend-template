@@ -48,6 +48,8 @@ Environment variables are validated at runtime using Zod schemas in `src/lib/env
 | `API_URL` | `string` (optional) | — | Server-side API endpoint (not exposed to browser) |
 | `API_SECRET` | `string` (optional, min 32 chars) | — | Server-side API authentication key |
 | `API_TIMEOUT` | `number` (parsed from string) | `10000` | API request timeout in milliseconds |
+| `METRICS_PORT` | `number` (parsed from string) | `9464` | Port the Prometheus `/metrics` HTTP listener binds to (started by `src/instrumentation.ts`) |
+| `METRICS_PATH` | `string` | `/metrics` | Path on that port where `prom-client` exposes metrics |
 
 ### Commented-out Templates
 

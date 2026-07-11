@@ -17,6 +17,7 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
   - [Developer Experience](#developer-experience)
   - [Testing](#testing)
   - [Security](#security)
+  - [Observability](#observability)
   - [CI/CD & Deployment](#cicd--deployment)
 - [Security Headers](#security-headers)
 - [Deployment](#deployment)
@@ -120,6 +121,8 @@ Environment variables are validated at runtime using Zod schemas in `src/lib/env
 | `API_URL` | `string` (optional) | — | Server-side API endpoint |
 | `API_SECRET` | `string` (optional, min 32 chars) | — | Server-side API authentication key |
 | `API_TIMEOUT` | `string` → `number` (positive) | `10000` | API request timeout in milliseconds |
+| `METRICS_PORT` | `string` → `number` (1-65535) | `9464` | Port for the Prometheus metrics server started by `src/instrumentation.ts` |
+| `METRICS_PATH` | `string` (must start with `/`) | `/metrics` | HTTP path served by the Prometheus metrics server |
 
 Additional variables (database, authentication, analytics, email, AWS S3) are available as commented templates in `src/lib/env.ts` and `.env.example` — uncomment and configure as needed.
 
@@ -147,12 +150,14 @@ Next.js App Router (src/app/)
     │     ├── atoms/     — Wrapped shadcn/ui primitives with cursor styling
     │     ├── molecules/ — Composite components (Header, Footer, ModeToggle, showcases)
     │     ├── providers/ — React Context providers (ThemeProvider)
-    │     └── ui/        — shadcn/ui base components (34 components, new-york style)
+    │     └── ui/        — shadcn/ui base components (33 components, new-york style)
     │
     ├─── Logic Layer (src/lib/)
-    │     ├── env.ts     — Zod-validated environment variables
-    │     ├── atom.tsx   — createAtom() factory for wrapping UI components
-    │     └── utils.ts   — cn() Tailwind class merge utility
+    │     ├── env.ts             — Zod-validated environment variables
+    │     ├── atom.tsx           — createAtom() factory for wrapping UI components
+    │     ├── csp.ts             — Builds per-request nonce-based Content Security Policy
+    │     ├── metrics-server.ts  — Prometheus /metrics HTTP server (port + path from env)
+    │     └── utils.ts           — cn() Tailwind class merge utility
     │
     └─── Infrastructure (outside src/)
           ├── .github/workflows/ — 11 CI/CD workflows
@@ -183,10 +188,14 @@ Next.js App Router (src/app/)
 │   │   ├── atoms/           # 10 wrapped UI elements (Button, Checkbox, Input, etc.)
 │   │   ├── molecules/       # 10 composite components (Header, Footer, ModeToggle, showcases)
 │   │   ├── providers/       # Context providers (ThemeProvider)
-│   │   └── ui/              # 34 shadcn/ui base components (new-york style)
+│   │   └── ui/              # 33 shadcn/ui base components (new-york style)
+│   ├── instrumentation.ts  # Next.js instrumentation hook — boots Prometheus metrics server
+│   ├── proxy.ts            # Per-request middleware: security headers, fresh CSP nonce
 │   └── lib/
 │       ├── atom.tsx         # createAtom() factory for consistent cursor styling
 │       ├── env.ts           # Zod-validated environment variables
+│       ├── csp.ts           # Content Security Policy builder
+│       ├── metrics-server.ts # Prometheus /metrics HTTP server (prom-client)
 │       └── utils.ts         # cn() Tailwind merge utility
 ├── docs/                    # Deployment and infrastructure documentation
 ├── helm/nextjs-app/         # Helm chart with multi-environment values
@@ -269,7 +278,7 @@ git commit -m "docs: update readme with setup instructions"
 
 ### UI Components
 
-- **shadcn/ui** — 34 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
+- **shadcn/ui** — 33 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
 - **Atoms** — 10 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
 - **Molecules** — 10 composite components (Header, Footer, ModeToggle, and 7 showcase sections)
 - **Radix UI** primitives for accessible components
@@ -295,18 +304,24 @@ git commit -m "docs: update readme with setup instructions"
 - jest-dom matchers augmented onto `bun:test`
 - Coverage thresholds: 60% (lines and functions)
 - Watch mode for development
-- 9 test files with 102 test cases
+- 10 test files covering proxy, CSP, metrics server, page rendering, atoms, molecules, and shadcn primitives
 
 ### Security
 
-- Per-request nonce-based CSP generated in `src/proxy.ts` (no `unsafe-inline` / `unsafe-eval` for scripts and styles)
+- Per-request nonce-based CSP generated in `src/proxy.ts` — production builds carry no `unsafe-inline` / `unsafe-eval` for scripts or styles; development adds `'unsafe-eval'` to `script-src` and `'unsafe-inline'` to `style-src` to allow Turbopack HMR
 - Comprehensive security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy, etc.) attached by the proxy on every request
-- Runtime env resolution: the proxy reads `process.env.API_URL` so Kubernetes-injected values flow into the CSP without rebuilding the image
+- Runtime env resolution: `src/lib/csp.ts` reads `process.env.API_URL` (invoked by the proxy on every request) so Kubernetes-injected values flow into the CSP `connect-src` without rebuilding the image
 - Environment variable validation with Zod at startup
 - HTTPS-only image loading and upgrade-insecure-requests
 - **Trivy** security scanner for vulnerability detection in dependencies, containers, and IaC
 - Non-root containers (UID 1001), read-only root filesystem, dropped capabilities
 - Vault Agent Injector for runtime secret injection (no secrets in manifests)
+
+### Observability
+
+- **Prometheus metrics endpoint** — `src/instrumentation.ts` boots a dedicated HTTP server (prom-client) on `METRICS_PORT`/`METRICS_PATH` so the public Next.js port stays untouched
+- **kube-prometheus-stack ServiceMonitor** — Helm chart ships a ServiceMonitor (target port `9464`) for auto-discovery by Prometheus
+- **Secure deployment defaults** — ServiceMonitor is disabled by default; enable per environment via Helm values
 
 ### CI/CD & Deployment
 
@@ -340,8 +355,8 @@ Configured in `src/proxy.ts` to protect against common web vulnerabilities. The 
 **Content Security Policy directives (built in `src/lib/csp.ts`):**
 
 - `default-src 'self'` — Only load resources from your domain
-- `script-src 'self' 'nonce-{nonce}'` — Allows only same-origin scripts carrying the per-request nonce
-- `style-src 'self' 'nonce-{nonce}'` — Allows only same-origin styles carrying the per-request nonce
+- `script-src 'self' 'nonce-{nonce}'` (production) — Allows only same-origin scripts carrying the per-request nonce. Development adds `'unsafe-eval'` for React's dev-mode callstack reconstruction.
+- `style-src 'self' 'nonce-{nonce}'` (production) — Allows only same-origin styles carrying the per-request nonce. Development uses `'unsafe-inline'` (browsers ignore `'unsafe-inline'` when a nonce is also present, so the nonce is dropped from `style-src` in dev) to permit Turbopack's HMR overlay styles.
 - `img-src 'self' data: https:` — Images from your domain, data URIs, or HTTPS sources
 - `font-src 'self' data:` — Fonts from your domain or data URIs
 - `connect-src 'self' [{API_URL}]` — API calls to your domain; the runtime `API_URL` is appended when set
@@ -351,7 +366,7 @@ Configured in `src/proxy.ts` to protect against common web vulnerabilities. The 
 - `frame-ancestors 'none'` — Additional clickjacking protection
 - `upgrade-insecure-requests` — Automatically upgrades HTTP to HTTPS
 
-The nonce is generated by the proxy and read by the root layout via the `x-nonce` request header, so any future `<Script nonce={…} />` in a Server Component will be permitted by the CSP without falling back to `unsafe-inline` or `unsafe-eval`.
+The nonce is generated by the proxy and read by the root layout via the `x-nonce` request header (passed to `next-themes` for its inline theme-detection script), so any future `<Script nonce={…} />` in a Server Component will be permitted by the CSP without falling back to `unsafe-inline` or `unsafe-eval` in production.
 
 
 ## Deployment
@@ -380,9 +395,9 @@ The Docker image uses a multi-stage build:
 
 This template includes GitHub Actions workflows for:
 
-- **CI Pipeline** (`ci.yml`) — Runs on push to `main`: build, test, security scan, Docker build, staging deploy, and production deploy
-- **Staging deployment** (`staging-deploy.yml`) — Deployed automatically as part of the CI pipeline on main pushes
-- **Production deployment** (`production-deploy.yml`) — Triggered as part of the CI pipeline on main pushes; gated by the `production` GitHub Environment and requires manual approval before it can run
+- **CI Pipeline** (`ci.yml`) — Runs on push to any branch: lint, test, knip, security scan, Docker build/push, then routes to the appropriate deploy workflow (feature, staging, or staging → production)
+- **Staging deployment** (`staging-deploy.yml`) — Deployed automatically as part of the CI pipeline after a successful main-branch push
+- **Production deployment** (`production-deploy.yml`) — Triggered by the CI pipeline after staging succeeds; gated by the `production` GitHub Environment and requires manual approval before it can run
 - **Production rollback** (`production-rollback.yml`) — Manual rollback to previous production deployment
 - **Staging rollback** (`staging-rollback.yml`) — Manual rollback to previous staging deployment
 - **Feature branch deployment** (`feature-deploy.yml`) — Automatic preview deployments for non-main branches
@@ -420,10 +435,10 @@ Each feature branch gets automatic preview deployment:
 
 Helm charts located in `helm/nextjs-app/` with environment-specific values:
 
-- `values.yaml` — Base configuration (2 replicas, 500m CPU, 512Mi memory)
-- `values-feature.yaml` — Feature branch overrides (1 replica, 250m CPU, 256Mi memory)
-- `values-staging.yaml` — Staging environment (1 replica, NodePort 30002)
-- `values-production.yaml` — Production environment (1-5 replicas with HPA, NodePort 30001)
+- `values.yaml` — Base configuration (2 replicas, 500m CPU, 256Mi memory request, 256Mi limit)
+- `values-feature.yaml` — Feature branch overrides (1 replica, 250m CPU, 256Mi memory, `featureBranch.enabled: true`)
+- `values-staging.yaml` — Staging environment (1 replica, NodePort 30002, HPA 1–2 replicas, PDB enabled)
+- `values-production.yaml` — Production environment (2 replicas, NodePort 30001, HPA 1–2 replicas at 60% CPU, PDB with `minAvailable: 1`)
 
 **Helm resources:** Deployment, Service (NodePort), ServiceAccount, HPA (disabled by default), Ingress (disabled by default), PodDisruptionBudget (production only)
 
