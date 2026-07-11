@@ -50,7 +50,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| HTTP security headers | stable | X-Frame-Options, CSP, Permissions-Policy set by src/proxy.ts on every request |
+| HTTP security headers | stable | X-Frame-Options, X-Content-Type-Options, Referrer-Policy, X-DNS-Prefetch-Control, HSTS, Permissions-Policy, X-Permitted-Cross-Domain-Policies, and CSP set by src/proxy.ts on every request |
 | Per-request nonce-based CSP | stable | Fresh base64 nonce per request, attached via `x-nonce` and embedded in `script-src` / `style-src` (no `unsafe-inline` / `unsafe-eval` in production; dev adds `'unsafe-eval'` to scripts and `'unsafe-inline'` to styles for Turbopack HMR) |
 | Runtime env resolution in CSP | stable | `src/proxy.ts` reads `process.env.API_URL` so Kubernetes-injected values flow into `connect-src` without rebuilding the image |
 | Trivy security scanning | stable | Scans deps, Dockerfile, and Helm charts in CI |
@@ -93,7 +93,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | HPA autoscaling | stable | Horizontal pod autoscaling for production workloads |
 | Cost allocation labels | stable | Kubernetes labels for cost tracking across all environments |
 | Docker Compose for local dev | stable | Containerized local development environment |
-| Health checks | stable | Liveness and readiness probes in Docker and Kubernetes |
+| Health checks | stable | Liveness and readiness probes in Kubernetes; `docker-compose.yml` ships a matching healthcheck for local containerized development |
 
 ## Project Setup
 
