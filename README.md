@@ -147,7 +147,7 @@ Next.js App Router (src/app/)
     │     ├── atoms/     — Wrapped shadcn/ui primitives with cursor styling
     │     ├── molecules/ — Composite components (Header, Footer, ModeToggle, showcases)
     │     ├── providers/ — React Context providers (ThemeProvider)
-    │     └── ui/        — shadcn/ui base components (34 components, new-york style)
+    │     └── ui/        — shadcn/ui base components (33 components, new-york style)
     │
     ├─── Logic Layer (src/lib/)
     │     ├── env.ts     — Zod-validated environment variables
@@ -183,7 +183,7 @@ Next.js App Router (src/app/)
 │   │   ├── atoms/           # 10 wrapped UI elements (Button, Checkbox, Input, etc.)
 │   │   ├── molecules/       # 10 composite components (Header, Footer, ModeToggle, showcases)
 │   │   ├── providers/       # Context providers (ThemeProvider)
-│   │   └── ui/              # 34 shadcn/ui base components (new-york style)
+│   │   └── ui/              # 33 shadcn/ui base components (new-york style)
 │   └── lib/
 │       ├── atom.tsx         # createAtom() factory for consistent cursor styling
 │       ├── env.ts           # Zod-validated environment variables
@@ -269,7 +269,7 @@ git commit -m "docs: update readme with setup instructions"
 
 ### UI Components
 
-- **shadcn/ui** — 34 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
+- **shadcn/ui** — 33 components in new-york style (Accordion, AlertDialog, Alert, Avatar, Badge, Button, Calendar, Card, Checkbox, Collapsible, Dialog, Drawer, DropdownMenu, Input, Label, NavigationMenu, Pagination, Popover, Progress, RadioGroup, Select, Separator, Sheet, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Toggle, ToggleGroup, Tooltip)
 - **Atoms** — 10 wrapped components with consistent cursor styling via `createAtom()` factory (Button, Checkbox, ExternalLink, Input, Label, RadioGroup, SectionLabel, Slider, Switch, Textarea)
 - **Molecules** — 10 composite components (Header, Footer, ModeToggle, and 7 showcase sections)
 - **Radix UI** primitives for accessible components
@@ -295,7 +295,7 @@ git commit -m "docs: update readme with setup instructions"
 - jest-dom matchers augmented onto `bun:test`
 - Coverage thresholds: 60% (lines and functions)
 - Watch mode for development
-- 9 test files with 102 test cases
+- 10 test files covering proxy, CSP, metrics server, page rendering, atoms, molecules, and shadcn primitives
 
 ### Security
 
@@ -380,9 +380,9 @@ The Docker image uses a multi-stage build:
 
 This template includes GitHub Actions workflows for:
 
-- **CI Pipeline** (`ci.yml`) — Runs on push to `main`: build, test, security scan, Docker build, staging deploy, and production deploy
-- **Staging deployment** (`staging-deploy.yml`) — Deployed automatically as part of the CI pipeline on main pushes
-- **Production deployment** (`production-deploy.yml`) — Triggered as part of the CI pipeline on main pushes; gated by the `production` GitHub Environment and requires manual approval before it can run
+- **CI Pipeline** (`ci.yml`) — Runs on push to any branch: lint, test, knip, security scan, Docker build/push, then routes to the appropriate deploy workflow (feature, staging, or staging → production)
+- **Staging deployment** (`staging-deploy.yml`) — Deployed automatically as part of the CI pipeline after a successful main-branch push
+- **Production deployment** (`production-deploy.yml`) — Triggered by the CI pipeline after staging succeeds; gated by the `production` GitHub Environment and requires manual approval before it can run
 - **Production rollback** (`production-rollback.yml`) — Manual rollback to previous production deployment
 - **Staging rollback** (`staging-rollback.yml`) — Manual rollback to previous staging deployment
 - **Feature branch deployment** (`feature-deploy.yml`) — Automatic preview deployments for non-main branches
@@ -420,10 +420,10 @@ Each feature branch gets automatic preview deployment:
 
 Helm charts located in `helm/nextjs-app/` with environment-specific values:
 
-- `values.yaml` — Base configuration (2 replicas, 500m CPU, 512Mi memory)
-- `values-feature.yaml` — Feature branch overrides (1 replica, 250m CPU, 256Mi memory)
-- `values-staging.yaml` — Staging environment (1 replica, NodePort 30002)
-- `values-production.yaml` — Production environment (1-5 replicas with HPA, NodePort 30001)
+- `values.yaml` — Base configuration (2 replicas, 500m CPU, 256Mi memory request, 256Mi limit)
+- `values-feature.yaml` — Feature branch overrides (1 replica, 250m CPU, 256Mi memory, `featureBranch.enabled: true`)
+- `values-staging.yaml` — Staging environment (1 replica, NodePort 30002, HPA 1–2 replicas, PDB enabled)
+- `values-production.yaml` — Production environment (2 replicas, NodePort 30001, HPA 1–2 replicas at 60% CPU, PDB with `minAvailable: 1`)
 
 **Helm resources:** Deployment, Service (NodePort), ServiceAccount, HPA (disabled by default), Ingress (disabled by default), PodDisruptionBudget (production only)
 

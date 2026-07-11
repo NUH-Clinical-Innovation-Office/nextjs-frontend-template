@@ -17,7 +17,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 34 shadcn/ui components (new-york style) | stable | Pre-built accessible UI primitives in src/components/ui/ |
+| 33 shadcn/ui components (new-york style) | stable | Pre-built accessible UI primitives in src/components/ui/ |
 | 10 atom components | stable | Cursor-styled wrappers around shadcn/ui in src/components/atoms/ |
 | 10 molecule components | stable | Composed components including Header, Footer, ModeToggle, showcases |
 | ThemeProvider with next-themes | stable | Light/dark/system theme switching via React context |
@@ -42,7 +42,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 
 | Feature | Status | Description |
 |---------|--------|-------------|
-| 9 test files with 102 test cases | stable | Comprehensive test coverage across src/ |
+| 10 test files covering proxy, CSP, metrics, page, atoms, molecules, and shadcn primitives | stable | Comprehensive test coverage across src/ |
 | Coverage thresholds at 60% | stable | Minimum coverage enforced in bunfig.toml |
 | happy-dom environment with global mocks | stable | Browser API mocks configured in test-setup.ts |
 
