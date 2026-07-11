@@ -310,7 +310,7 @@ git commit -m "docs: update readme with setup instructions"
 
 - Per-request nonce-based CSP generated in `src/proxy.ts` (no `unsafe-inline` / `unsafe-eval` for scripts and styles)
 - Comprehensive security headers (CSP, HSTS, X-Frame-Options, Permissions-Policy, etc.) attached by the proxy on every request
-- Runtime env resolution: the proxy reads `process.env.API_URL` so Kubernetes-injected values flow into the CSP without rebuilding the image
+- Runtime env resolution: `src/lib/csp.ts` reads `process.env.API_URL` (invoked by the proxy on every request) so Kubernetes-injected values flow into the CSP `connect-src` without rebuilding the image
 - Environment variable validation with Zod at startup
 - HTTPS-only image loading and upgrade-insecure-requests
 - **Trivy** security scanner for vulnerability detection in dependencies, containers, and IaC
