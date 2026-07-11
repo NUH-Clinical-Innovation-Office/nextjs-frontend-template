@@ -17,6 +17,7 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
   - [Developer Experience](#developer-experience)
   - [Testing](#testing)
   - [Security](#security)
+  - [Observability](#observability)
   - [CI/CD & Deployment](#cicd--deployment)
 - [Security Headers](#security-headers)
 - [Deployment](#deployment)
@@ -120,6 +121,8 @@ Environment variables are validated at runtime using Zod schemas in `src/lib/env
 | `API_URL` | `string` (optional) | — | Server-side API endpoint |
 | `API_SECRET` | `string` (optional, min 32 chars) | — | Server-side API authentication key |
 | `API_TIMEOUT` | `string` → `number` (positive) | `10000` | API request timeout in milliseconds |
+| `METRICS_PORT` | `string` → `number` (1-65535) | `9464` | Port for the Prometheus metrics server started by `src/instrumentation.ts` |
+| `METRICS_PATH` | `string` (must start with `/`) | `/metrics` | HTTP path served by the Prometheus metrics server |
 
 Additional variables (database, authentication, analytics, email, AWS S3) are available as commented templates in `src/lib/env.ts` and `.env.example` — uncomment and configure as needed.
 
@@ -150,9 +153,11 @@ Next.js App Router (src/app/)
     │     └── ui/        — shadcn/ui base components (33 components, new-york style)
     │
     ├─── Logic Layer (src/lib/)
-    │     ├── env.ts     — Zod-validated environment variables
-    │     ├── atom.tsx   — createAtom() factory for wrapping UI components
-    │     └── utils.ts   — cn() Tailwind class merge utility
+    │     ├── env.ts             — Zod-validated environment variables
+    │     ├── atom.tsx           — createAtom() factory for wrapping UI components
+    │     ├── csp.ts             — Builds per-request nonce-based Content Security Policy
+    │     ├── metrics-server.ts  — Prometheus /metrics HTTP server (port + path from env)
+    │     └── utils.ts           — cn() Tailwind class merge utility
     │
     └─── Infrastructure (outside src/)
           ├── .github/workflows/ — 11 CI/CD workflows
@@ -184,9 +189,13 @@ Next.js App Router (src/app/)
 │   │   ├── molecules/       # 10 composite components (Header, Footer, ModeToggle, showcases)
 │   │   ├── providers/       # Context providers (ThemeProvider)
 │   │   └── ui/              # 33 shadcn/ui base components (new-york style)
+│   ├── instrumentation.ts  # Next.js instrumentation hook — boots Prometheus metrics server
+│   ├── proxy.ts            # Per-request middleware: security headers, fresh CSP nonce
 │   └── lib/
 │       ├── atom.tsx         # createAtom() factory for consistent cursor styling
 │       ├── env.ts           # Zod-validated environment variables
+│       ├── csp.ts           # Content Security Policy builder
+│       ├── metrics-server.ts # Prometheus /metrics HTTP server (prom-client)
 │       └── utils.ts         # cn() Tailwind merge utility
 ├── docs/                    # Deployment and infrastructure documentation
 ├── helm/nextjs-app/         # Helm chart with multi-environment values
@@ -307,6 +316,12 @@ git commit -m "docs: update readme with setup instructions"
 - **Trivy** security scanner for vulnerability detection in dependencies, containers, and IaC
 - Non-root containers (UID 1001), read-only root filesystem, dropped capabilities
 - Vault Agent Injector for runtime secret injection (no secrets in manifests)
+
+### Observability
+
+- **Prometheus metrics endpoint** — `src/instrumentation.ts` boots a dedicated HTTP server (prom-client) on `METRICS_PORT`/`METRICS_PATH` so the public Next.js port stays untouched
+- **kube-prometheus-stack ServiceMonitor** — Helm chart ships a ServiceMonitor (target port `9464`) for auto-discovery by Prometheus
+- **Secure deployment defaults** — ServiceMonitor is disabled by default; enable per environment via Helm values
 
 ### CI/CD & Deployment
 

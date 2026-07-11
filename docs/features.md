@@ -60,6 +60,14 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | Zod runtime env validation | stable | Type-safe environment variable parsing |
 | Image tag validation in Helm | stable | Prevents deployment of untagged images via _helpers.tpl |
 
+## Observability
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Prometheus metrics endpoint | stable | `src/instrumentation.ts` boots a dedicated HTTP server (prom-client) on `METRICS_PORT` / `METRICS_PATH` (defaults 9464 / `/metrics`) |
+| kube-prometheus-stack ServiceMonitor | stable | Helm chart ships a ServiceMonitor for Prometheus auto-discovery (disabled by default) |
+| METRICS_PORT / METRICS_PATH env vars | stable | Tunable via Zod-validated env in `src/lib/env.ts` |
+
 ## CI/CD
 
 | Feature | Status | Description |
