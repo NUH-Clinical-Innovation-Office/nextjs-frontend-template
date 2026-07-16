@@ -158,4 +158,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Soften placeholder text so it reads as a hint, not primary content. */
+  ::placeholder {
+    opacity: 0.75;
+  }
+  .dark ::placeholder {
+    opacity: 0.35;
+  }
 }
