@@ -89,8 +89,9 @@
   --info-foreground: oklch(1 0 0);
   --success: oklch(0.6 0.16 145);
   --success-foreground: oklch(1 0 0);
-  --warning: oklch(0.75 0.17 80);
-  --warning-foreground: oklch(0.2 0.05 80);
+  /* NUHS orange (#e57200) — warning shares the brand orange. */
+  --warning: oklch(0.674 0.171 53);
+  --warning-foreground: oklch(1 0 0);
   --highlight: oklch(0.674 0.171 53);
   --highlight-foreground: oklch(1 0 0);
   --border: oklch(0.92 0.02 258);
@@ -134,8 +135,9 @@
   --info-foreground: oklch(1 0 0);
   --success: oklch(0.65 0.17 145);
   --success-foreground: oklch(0.15 0.03 145);
-  --warning: oklch(0.78 0.17 80);
-  --warning-foreground: oklch(0.2 0.05 80);
+  /* NUHS orange (#e57200) — warning shares the brand orange. */
+  --warning: oklch(0.674 0.171 53);
+  --warning-foreground: oklch(1 0 0);
   --highlight: oklch(0.674 0.171 53);
   --highlight-foreground: oklch(1 0 0);
   --border: oklch(1 0 0 / 12%);
