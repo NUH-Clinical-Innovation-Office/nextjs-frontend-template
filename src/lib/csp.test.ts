@@ -17,14 +17,19 @@ describe('buildCsp', () => {
     expect(csp).toContain("script-src 'self' 'nonce-abc123'");
   });
 
-  it('includes the nonce in style-src', () => {
+  it("uses 'unsafe-inline' in style-src (runtime-styling libs inject unnonced styles)", () => {
     const csp = buildCsp('abc123', 'production');
-    expect(csp).toContain("style-src 'self' 'nonce-abc123'");
+    expect(csp).toContain("style-src 'self' 'unsafe-inline'");
   });
 
-  it('does not include unsafe-inline', () => {
+  it('omits the nonce from style-src so unsafe-inline stays effective', () => {
     const csp = buildCsp('abc123', 'production');
-    expect(csp).not.toContain('unsafe-inline');
+    expect(csp).not.toContain("style-src 'self' 'nonce-abc123'");
+  });
+
+  it('does not include unsafe-inline in script-src', () => {
+    const csp = buildCsp('abc123', 'production');
+    expect(csp.split(';').find((d) => d.includes('script-src'))).not.toContain('unsafe-inline');
   });
 
   it('does not include unsafe-eval in production', () => {

@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { headers } from 'next/headers';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
+import { Toaster } from '@/components/ui/sonner';
 // Import env to validate environment variables on application startup
 import '@/lib/env';
 
@@ -46,6 +47,7 @@ export default async function RootLayout({
           nonce={nonce}
         >
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
