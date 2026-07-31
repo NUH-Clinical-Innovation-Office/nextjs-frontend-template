@@ -7,6 +7,9 @@ A production-ready [Next.js](https://nextjs.org) template with TypeScript, Tailw
 - [Project Description](#project-description)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
+  - [Quick Setup (Recommended for New Projects)](#quick-setup-recommended-for-new-projects)
+  - [CI/CD Setup](#cicd-setup)
+  - [Manual Setup](#manual-setup)
 - [Configuration](#configuration)
 - [Project Architecture](#project-architecture)
 - [Project Structure](#project-structure)
@@ -83,6 +86,51 @@ The setup script will:
 - Ports must be in the NodePort range (30000-32767)
 
 After running the setup script, review the changes before committing.
+
+### CI/CD Setup
+
+The template ships self-contained workflows that target a self-hosted NodePort
+cluster. If your project instead uses the shared NUH pipeline (GHCR images plus
+AWS EKS), run the CI setup script to generate workflows wired to the reusable
+workflows in
+[`NUH-Clinical-Innovation-Office/ci-workflows`](https://github.com/NUH-Clinical-Innovation-Office/ci-workflows):
+
+```bash
+chmod +x scripts/setup-ci.sh
+./scripts/setup-ci.sh
+```
+
+The script will:
+
+- Detect which quality gates your `package.json` supports (`test`, `knip`, `check:api`) and enable only those
+- Ask for the build architecture (`arm64` or `amd64`) and pick the matching runner
+- Optionally add an AWS EKS development deploy job, prompting for namespace, release name, cluster, region, and Helm chart paths
+- Show a configuration summary before writing anything
+
+**What gets generated in `.github/workflows/`:**
+
+| Workflow                 | Trigger                | Purpose                                         |
+| ------------------------ | ---------------------- | ----------------------------------------------- |
+| `pull-request.yml`       | PRs to `main`          | Quality checks, image build, Trivy scan         |
+| `ci.yml`                 | Push to `main`         | Quality checks, build & push, scan, deploy      |
+| `development-deploy.yml` | Called by `ci.yml`     | Helm deploy to AWS EKS (only if deploy enabled) |
+| `image-cleanup.yml`      | Weekly cron            | Prune old GHCR image versions                   |
+
+Because the shared pipeline and the template's bundled workflows are different
+architectures, they cannot run side by side. The script therefore **replaces**
+the existing workflows, moving them to `.github/workflows-backup/` first — nothing
+is deleted. Delete that directory once you are satisfied with the new pipeline.
+
+For how the shared pipeline works — tag pinning, image tag outputs, OIDC
+deploys, and PR isolation — see the
+[`ci-workflows` README](https://github.com/NUH-Clinical-Innovation-Office/ci-workflows#how-the-generated-pipeline-works).
+
+**Before the first run**, in your GitHub repository settings:
+
+- Allow Actions to access the `ci-workflows` repository (Settings → Actions → General)
+- If you enabled deploys, set the `AWS_DEV_DEPLOY_ROLE_ARN` secret to your OIDC role ARN
+- If you enabled deploys, create a `development` environment (Settings → Environments)
+- If you enabled deploys, ensure the Helm chart has a values file for the target environment
 
 ### Manual Setup
 
@@ -204,6 +252,7 @@ Next.js App Router (src/app/)
 ├── Dockerfile               # Multi-stage Docker build (standalone output)
 ├── docker-compose.yml       # Local containerized development
 ├── setup.sh                 # Project setup script
+├── scripts/setup-ci.sh      # Generates CI wired to shared ci-workflows
 └── bunfig.toml              # bun test configuration (preload + coverage thresholds)
 ```
 
