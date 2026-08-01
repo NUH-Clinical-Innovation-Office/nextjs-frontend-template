@@ -27,7 +27,7 @@ describe('Button atom', () => {
         Delete
       </Button>,
     );
-    expect(screen.getByTestId('btn')).toHaveClass('bg-destructive');
+    expect(screen.getByTestId('btn')).toHaveClass('bg-destructive/10', 'text-destructive');
   });
 
   it('should forward size prop', () => {
