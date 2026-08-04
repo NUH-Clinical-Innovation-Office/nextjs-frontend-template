@@ -1,417 +1,100 @@
 # src/ Directory Guide
 
-This guide helps Claude Code understand the folder structure and component architecture for implementing features in this Next.js application.
-
-## Directory Structure
+## Structure
 
 ```
 src/
-├── app/                    # Next.js App Router (pages and layouts)
-│   ├── api/               # API routes (server-side endpoints)
-│   │   └── example/       # Example API endpoint
-│   ├── layout.tsx         # Root layout (applies to all pages)
-│   └── page.tsx           # Home page
+├── app/
+│   ├── api/notes/route.ts   # Server-side proxy to common-service
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── error.tsx            # Route error boundary
+│   ├── global-error.tsx     # Root error boundary
+│   └── loading.tsx
 │
-├── components/            # React components (Atomic Design pattern)
-│   ├── atoms/            # Basic, indivisible UI elements
-│   ├── molecules/        # Composite components made from atoms
-│   ├── providers/        # React Context providers
-│   └── ui/               # shadcn/ui components (pre-built, customizable)
+├── components/
+│   ├── add-note-card.tsx    # The one feature component
+│   └── ui/                  # shadcn/ui: button, card, input, label, sonner
 │
-└── lib/                   # Utility functions and configurations
-    ├── env.ts            # Environment variable validation (Zod schemas)
-    └── utils.ts          # Utility functions (cn helper)
+├── lib/
+│   ├── env.ts               # Zod-validated environment variables
+│   ├── csp.ts               # Content Security Policy builder
+│   └── utils.ts             # cn() helper
+│
+└── proxy.ts                 # Security headers + per-request CSP nonce
 ```
 
-## Component Architecture (Atomic Design)
+This is a deliberately small sample. It was reduced from a design-system
+showcase template, so if you are looking for atoms/molecules/providers or the
+other ~30 shadcn components, they were removed on purpose. Add components back
+via `bunx shadcn@latest add <name>` only when something actually uses them —
+`bun run knip` fails the build on unused dependencies.
 
-### 1. Atoms (`src/components/atoms/`)
+## How the common-service call works
 
-**Purpose**: Smallest, reusable UI building blocks that cannot be broken down further.
+common-service has **no ingress**. It is reachable only from inside the
+cluster, at `http://common-service.sample-services.svc.cluster.local:8080`.
 
-**Characteristics**:
+That shapes the data flow:
 
-- Single responsibility
-- No dependencies on other custom components (may use shadcn/ui components)
-- Highly reusable across the application
-
-**Example**: `ExternalLink` component
-
-```tsx
-// src/components/atoms/external-link.tsx
-import Link from 'next/link';
-
-export function ExternalLink({ href, children, className, ...props }) {
-  return (
-    <Link href={href} target="_blank" rel="noopener noreferrer" className={className} {...props}>
-      {children}
-    </Link>
-  );
-}
+```
+browser → POST /api/notes (same origin)
+          → route.ts (Node runtime, server-side)
+            → POST {COMMON_SERVICE_URL}/api/v1/todos (cluster-internal)
 ```
 
-**When to create atoms**:
-
-- Wrapping native HTML elements with consistent styling/behavior
-- Creating specialized versions of shadcn/ui components
-- Building small, reusable UI primitives
-
-### 2. Molecules (`src/components/molecules/`)
-
-**Purpose**: Combinations of atoms and/or shadcn/ui components that form functional units.
-
-**Characteristics**:
-
-- Composed of multiple atoms or ui components
-- Serve a specific, single purpose
-- May contain simple logic (hooks, state)
-- More complex than atoms but still reusable
-
-**Example**: `ModeToggle` component
-
-```tsx
-// src/components/molecules/mode-toggle.tsx
-'use client';
-
-import { Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { Switch } from '@radix-ui/react-switch';
-
-export function ModeToggle() {
-  const { resolvedTheme, setTheme } = useTheme();
-  const isDark = resolvedTheme === 'dark';
-
-  return (
-    <Switch
-      checked={isDark}
-      onCheckedChange={() => setTheme(isDark ? 'light' : 'dark')}
-      aria-label="Toggle theme"
-    >
-      <Sun className="h-4 w-4" />
-      <Moon className="h-4 w-4" />
-    </Switch>
-  );
-}
-```
-
-**When to create molecules**:
-
-- Combining multiple UI elements with interactive behavior
-- Creating reusable feature components (search bars, cards with actions, etc.)
-- Building components that use hooks or client-side logic
-
-### 3. Providers (`src/components/providers/`)
-
-**Purpose**: React Context providers for global state management and configuration.
-
-**Characteristics**:
-
-- Must be client components (`'use client'`)
-- Wrap app or page layouts to provide context
-- Handle theme, auth, or other app-wide state
-
-**Example**: `ThemeProvider`
-
-```tsx
-// Used in layout.tsx
-<ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-  {children}
-</ThemeProvider>
-```
-
-**When to create providers**:
-
-- Adding global state (user auth, feature flags)
-- Integrating third-party providers (analytics, error tracking)
-- Creating app-wide configurations
-
-### 4. UI Components (`src/components/ui/`)
-
-**Purpose**: Pre-built components from shadcn/ui, customized for this project.
-
-**Characteristics**:
-
-- Installed via `bunx shadcn@latest add <component>`
-- Based on Radix UI primitives
-- Fully customizable (you own the code)
-- Styled with Tailwind CSS using `class-variance-authority` (CVA)
-
-**Available components**:
-
-- `Button`: Various variants (default, destructive, outline, secondary, ghost, link) and sizes
-- `Card`, `CardHeader`, `CardTitle`, `CardDescription`, `CardContent`: Content containers
-- `Badge`: Labels and tags
-- `Switch`: Toggle switches (via Radix UI primitive)
-
-**Example usage**:
-
-```tsx
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@radix-ui/react-switch';
-
-<Card>
-  <CardHeader>
-    <CardTitle>Title</CardTitle>
-    <CardDescription>Description</CardDescription>
-  </CardHeader>
-  <CardContent>
-    <Button variant="outline" size="lg">Click me</Button>
-    <Switch checked={enabled} onCheckedChange={setEnabled} />
-  </CardContent>
-</Card>
-```
-
-## shadcn/ui Components: Key Concepts
-
-### Class Variance Authority (CVA)
-
-shadcn/ui components use CVA for variant-based styling:
-
-```tsx
-const buttonVariants = cva(
-  "base-classes", // Applied to all variants
-  {
-    variants: {
-      variant: {
-        default: "bg-primary text-primary-foreground",
-        outline: "border bg-background",
-      },
-      size: {
-        default: "h-9 px-4",
-        sm: "h-8 px-3",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-      size: "default",
-    },
-  }
-);
-```
-
-**Usage**:
-
-```tsx
-<Button variant="outline" size="sm">Small Outline Button</Button>
-```
-
-### The `cn()` Utility
-
-Located in `src/lib/utils.ts`, `cn()` merges Tailwind classes intelligently:
-
-```tsx
-import { cn } from '@/lib/utils';
-
-// Later classes override earlier ones
-<Button className={cn("bg-blue-500", "bg-red-500")}>
-  {/* Renders with bg-red-500 */}
-</Button>
-```
-
-**Use `cn()` when**:
-
-- Conditionally applying classes: `cn("base-class", isActive && "active-class")`
-- Merging default and custom classes: `cn(defaultClasses, className)`
-- Preventing Tailwind class conflicts
-
-### The `asChild` Pattern
-
-Many shadcn/ui components support `asChild` (via Radix UI's `Slot`):
-
-```tsx
-// Renders as a Link, not a button element, but with Button styles
-<Button asChild>
-  <Link href="/about">About</Link>
-</Button>
-```
-
-**Benefits**:
-
-- Preserves component styling while changing the underlying element
-- Useful for navigation (Button as Link) or semantic HTML
-
-## Tailwind CSS Guidelines
-
-### Responsive Design
-
-Use Tailwind's responsive prefixes:
-
-```tsx
-<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-  {/* 1 column mobile, 2 tablet, 3 desktop */}
-</div>
-```
-
-### Dark Mode
-
-This project uses `class` strategy for dark mode:
-
-```tsx
-<div className="bg-white dark:bg-gray-900 text-black dark:text-white">
-  {/* Automatically switches based on theme */}
-</div>
-```
-
-### Spacing & Layout
-
-```tsx
-<div className="p-4 sm:p-8">           {/* Padding */}
-  <div className="space-y-4">          {/* Vertical spacing between children */}
-    <div className="flex gap-2">        {/* Horizontal spacing in flexbox */}
-      <Button>One</Button>
-      <Button>Two</Button>
-    </div>
-  </div>
-</div>
-```
-
-## Implementing New Features: Decision Tree
-
-### 1. Is it a basic UI element?
-
-→ **Create an atom** in `src/components/atoms/`
-
-- Examples: custom links, icons, badges, specialized inputs
-
-### 2. Does it combine multiple UI elements with logic?
-
-→ **Create a molecule** in `src/components/molecules/`
-
-- Examples: navigation bars, search components, form groups
-
-### 3. Is it a page or major route?
-
-→ **Create in `src/app/`**
-
-- Use Server Components by default (faster, better SEO)
-- Add `'use client'` only when needed (hooks, events, browser APIs)
-
-### 4. Is it an API endpoint?
-
-→ **Create in `src/app/api/`**
-
-- Example: `src/app/api/users/route.ts`
-
-### 5. Do you need a pre-built component?
-
-→ **Search shadcn/ui components** and install:
-
-```bash
-bunx shadcn@latest add [component-name]
-```
-
-- Browse available components: <https://ui.shadcn.com/docs/components>
-
-## Common Patterns
-
-### Server Component (Default)
-
-```tsx
-// src/app/dashboard/page.tsx
-export default async function DashboardPage() {
-  const data = await fetchData(); // Can directly fetch data
-
-  return (
-    <div>
-      <h1>Dashboard</h1>
-      {/* Use client components for interactive parts */}
-      <InteractiveWidget data={data} />
-    </div>
-  );
-}
-```
-
-### Client Component
-
-```tsx
-// src/components/molecules/interactive-widget.tsx
-'use client';
-
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-
-export function InteractiveWidget({ data }) {
-  const [count, setCount] = useState(0);
-
-  return (
-    <Button onClick={() => setCount(count + 1)}>
-      Clicked {count} times
-    </Button>
-  );
-}
-```
-
-### API Route
-
-```tsx
-// src/app/api/hello/route.ts
-import { NextResponse } from 'next/server';
-
-export async function GET() {
-  return NextResponse.json({ message: 'Hello World' });
-}
-```
-
-### Using Environment Variables
+The browser never learns the internal address. `COMMON_SERVICE_URL` is
+deliberately **not** prefixed with `NEXT_PUBLIC_`, which is what keeps it out
+of the client bundle. Do not add the prefix.
+
+### Auth
+
+common-service validates an auth-service RS256 JWT via JWKS on every request.
+There is no unauthenticated path. The user pastes their own token into the
+form; the proxy forwards it as `Authorization: Bearer <token>` and never logs,
+stores, or echoes it back.
+
+Status mapping in `route.ts` is intentional:
+
+| Upstream            | Returned | Why                                        |
+|---------------------|----------|--------------------------------------------|
+| 200                 | 200      | Validated payload passed through           |
+| 401                 | 401      | Rejected token must stay distinct from an outage |
+| other non-2xx       | 502      | Upstream fault, details not leaked         |
+| timeout             | 504      | Worth retrying                             |
+| unreachable         | 502      | Usually misconfiguration                   |
+
+Keep the 401 distinct. Collapsing it into a generic error makes the token
+field undebuggable.
+
+## Environment variables
 
 ```tsx
 import { env } from '@/lib/env';
 
-// Type-safe, validated at runtime
-const apiUrl = env.NEXT_PUBLIC_API_URL;
+const upstream = env.COMMON_SERVICE_URL; // server-side only
 ```
 
-## File Naming Conventions
+Validated once at startup by Zod. Adding a variable means adding it to the
+schema in `src/lib/env.ts`.
 
-- **Components**: `kebab-case.tsx` (e.g., `mode-toggle.tsx`)
-- **Pages**: `page.tsx` (Next.js convention)
-- **Layouts**: `layout.tsx` (Next.js convention)
-- **API routes**: `route.ts` (Next.js convention)
-- **Tests**: `*.test.tsx` or `*.test.ts`
+## Conventions
 
-## Import Paths
-
-Always use the `@/` alias for imports:
-
-```tsx
-// ✅ Correct
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-
-// ❌ Avoid
-import { Button } from '../../../components/ui/button';
-```
-
-## Quick Reference: When to Use What
-
-| Need | Use | Location |
-|------|-----|----------|
-| Pre-built UI component | shadcn/ui | `src/components/ui/` |
-| Simple reusable element | Atom | `src/components/atoms/` |
-| Interactive feature | Molecule | `src/components/molecules/` |
-| New page | App Router | `src/app/page.tsx` |
-| API endpoint | API Route | `src/app/api/*/route.ts` |
-| Global state | Provider | `src/components/providers/` |
-| Utility function | Lib | `src/lib/` |
-| Environment config | env.ts | `src/lib/env.ts` |
+- Components are `kebab-case.tsx`; Next.js files follow its own names
+  (`page.tsx`, `layout.tsx`, `route.ts`).
+- Always import via the `@/` alias, never relative parent paths.
+- Server Components by default; add `'use client'` only for hooks, events, or
+  browser APIs.
+- Tests sit next to the file under test as `*.test.ts(x)`.
 
 ## Testing
 
-Place tests next to the file being tested:
-
-```
-src/
-├── components/
-│   ├── atoms/
-│   │   ├── external-link.tsx
-│   │   └── external-link.test.tsx  ← Test file
-```
-
-Run tests:
-
 ```bash
-bun run test              # Run once
-bun run test:watch        # Watch mode
-bun run test:coverage     # With coverage
+bun run test           # once
+bun run test:watch     # watch
+bun run test:coverage  # 60% floor, enforced in bunfig.toml
 ```
+
+`bun test` does **not** hoist `vi.mock`, so a mocked module has to be imported
+dynamically after the mock call. Tests here mostly stub `globalThis.fetch`
+directly, which sidesteps the issue.

@@ -1,4 +1,4 @@
-name: Production Deploy
+name: Production Deploy (AWS EKS)
 
 on:
   workflow_call:
@@ -7,260 +7,197 @@ on:
         description: "Docker image tag to deploy"
         required: true
         type: string
-      node_version:
-        description: "Node.js version to use"
+      registry:
+        description: "Container registry"
         required: false
         type: string
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  PRODUCTION_PORT: 30001
+        default: "ghcr.io"
+      image_name:
+        description: "Image name (defaults to repository name)"
+        required: false
+        type: string
+        default: ""
+      namespace:
+        description: "Kubernetes namespace"
+        required: false
+        type: string
+        default: "sample-services"
+    secrets:
+      COMMON_SERVICE_URL:
+        description: "Cluster-internal base URL of common-service"
+        required: true
+      AWS_ROLE_ARN:
+        description: "AWS role ARN for OIDC authentication"
+        required: true
 
 jobs:
   deploy:
-    name: Deploy to Production
+    name: Deploy to AWS EKS Production
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment:
       name: production
-      url: https://${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}
+      url: https://client-sample.russellgpt.com
     permissions:
-      contents: read
-      packages: read
-      deployments: write
-    outputs:
-      deployment_url: https://${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}
+      contents: read # Checkout repository code and Helm charts
+      packages: read # Pull Docker images from GitHub Container Registry
+      deployments: write # Create GitHub deployment status
+      id-token: write # Authenticate with AWS via OIDC
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Validate required secrets
+      - name: Determine image tag
+        id: image-tag
         run: |
-          MISSING_SECRETS=()
+          IMAGE_TAG="${{ inputs.image_tag }}"
 
-          if [ -z "${{ secrets.KUBECONFIG_SERVER }}" ]; then
-            MISSING_SECRETS+=("KUBECONFIG_SERVER")
-          fi
-          if [ -z "${{ secrets.KUBECONFIG_TOKEN }}" ]; then
-            MISSING_SECRETS+=("KUBECONFIG_TOKEN")
-          fi
-          if [ -z "${{ secrets.CLOUDFLARE_API_TOKEN }}" ]; then
-            MISSING_SECRETS+=("CLOUDFLARE_API_TOKEN")
-          fi
-          if [ -z "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" ]; then
-            MISSING_SECRETS+=("CLOUDFLARE_ACCOUNT_ID")
-          fi
-          if [ -z "${{ secrets.CLOUDFLARE_TUNNEL_ID }}" ]; then
-            MISSING_SECRETS+=("CLOUDFLARE_TUNNEL_ID")
-          fi
-          if [ -z "${{ vars.CLOUDFLARE_DOMAIN }}" ]; then
-            MISSING_SECRETS+=("CLOUDFLARE_DOMAIN")
-          fi
-
-          if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
-            echo "✗ ERROR: Missing required secrets:"
-            printf '  - %s\n' "${MISSING_SECRETS[@]}"
-            echo ""
-            echo "Please configure these secrets in your repository settings."
+          if [ -z "$IMAGE_TAG" ]; then
+            echo "ERROR: IMAGE_TAG is empty. Cannot proceed with deployment."
             exit 1
           fi
 
-          echo "✓ All required secrets are configured"
+          echo "IMAGE_TAG=$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          echo "Using image tag: $IMAGE_TAG"
+
+      - name: Validate required secrets and variables
+        run: |
+          MISSING_SECRETS=()
+
+          if [ -z "${{ secrets.COMMON_SERVICE_URL }}" ]; then
+            MISSING_SECRETS+=("COMMON_SERVICE_URL")
+          fi
+          if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
+            MISSING_SECRETS+=("AWS_ROLE_ARN")
+          fi
+          if [ -z "${{ vars.AWS_REGION }}" ]; then
+            MISSING_SECRETS+=("AWS_REGION (variable)")
+          fi
+          if [ -z "${{ vars.EKS_CLUSTER_NAME }}" ]; then
+            MISSING_SECRETS+=("EKS_CLUSTER_NAME (variable)")
+          fi
+
+          if [ ${#MISSING_SECRETS[@]} -gt 0 ]; then
+            echo "✗ ERROR: Missing required secrets/variables:"
+            printf '  - %s\n' "${MISSING_SECRETS[@]}"
+            echo ""
+            echo "Please configure these in your repository settings:"
+            echo "  Secrets: COMMON_SERVICE_URL, AWS_ROLE_ARN"
+            echo "  Variables: AWS_REGION, EKS_CLUSTER_NAME"
+            exit 1
+          fi
+
+          echo "✓ All required secrets and variables are configured"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          role-session-name: GitHubActions-${{ github.run_id }}
+
+      - name: Verify AWS credentials
+        run: |
+          aws sts get-caller-identity
+          echo "✓ AWS credentials verified"
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+        with:
+          version: "v1.31.0"
 
       - name: Install Helm
         uses: azure/setup-helm@v4
         with:
-          version: "v3.13.0"
+          version: "v3.16.0"
 
-      - name: Setup Kubernetes config
-        env:
-          KUBE_SERVER: ${{ secrets.KUBECONFIG_SERVER }}
-          KUBE_TOKEN: ${{ secrets.KUBECONFIG_TOKEN }}
+      - name: Update kubeconfig for EKS
         run: |
-          mkdir -p ~/.kube
-          touch ~/.kube/config
-          chmod 600 ~/.kube/config
-          # Cluster API is fronted by a proxied Cloudflare tunnel hostname,
-          # so the client sees Cloudflare's trusted cert (normal TLS verify).
-          kubectl config set-cluster prod --server="$KUBE_SERVER"
-          kubectl config set-credentials deployer --token="$KUBE_TOKEN"
-          kubectl config set-context prod --cluster=prod --user=deployer
-          kubectl config use-context prod
+          echo "Updating kubeconfig for EKS cluster: ${{ vars.EKS_CLUSTER_NAME }}"
+          aws eks update-kubeconfig \
+            --region ${{ vars.AWS_REGION }} \
+            --name ${{ vars.EKS_CLUSTER_NAME }}
 
-      - name: Copy GHCR secret to production namespace
+          kubectl cluster-info
+          echo "✓ Successfully connected to EKS cluster"
+
+      - name: Create namespace if not exists
         run: |
-          # Create namespace only if it doesn't exist (avoids patching pre-existing ns)
-          kubectl get namespace ${{ github.event.repository.name }} &>/dev/null || \
-            kubectl create namespace ${{ github.event.repository.name }}
+          kubectl create namespace ${{ inputs.namespace }} --dry-run=client -o yaml | kubectl apply -f -
+          echo "✓ Namespace ${{ inputs.namespace }} ready"
 
-          # Copy ghcr-secret from main namespace to production namespace only if it doesn't exist
-          if ! kubectl get secret ghcr-secret -n ${{ github.event.repository.name }} &>/dev/null; then
-            kubectl get secret ghcr-secret -n nextjs-frontend-template -o yaml | \
-              sed "s/namespace: nextjs-frontend-template/namespace: ${{ github.event.repository.name }}/" | \
-              kubectl apply -f -
-            echo "✓ Copied ghcr-secret to ${{ github.event.repository.name }}"
-          else
-            echo "✓ Secret ghcr-secret already exists in ${{ github.event.repository.name }}"
+      - name: Verify GHCR credentials secret exists
+        run: |
+          if ! kubectl get secret ghcr-credentials -n ${{ inputs.namespace }} &>/dev/null; then
+            echo "✗ ERROR: Secret 'ghcr-credentials' not found in '${{ inputs.namespace }}' namespace"
+            echo ""
+            echo "Please create the secret using:"
+            echo "  kubectl create secret docker-registry ghcr-credentials \\"
+            echo "    --docker-server=ghcr.io \\"
+            echo "    --docker-username=<github-username> \\"
+            echo "    --docker-password=<github-token> \\"
+            echo "    --namespace=${{ inputs.namespace }}"
+            exit 1
           fi
+          echo "✓ GHCR credentials secret found in ${{ inputs.namespace }} namespace"
 
       - name: Deploy with Helm
         run: |
-          IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+          if [ -n "${{ inputs.image_name }}" ]; then
+            IMAGE_NAME="${{ inputs.image_name }}"
+          else
+            IMAGE_NAME="${{ github.repository }}"
+          fi
+          IMAGE_NAME_LOWER=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
 
-          helm upgrade --install nextjs-app ./helm/nextjs-app \
-            -n ${{ github.event.repository.name }} \
+          echo "Deploying client-sample to production..."
+          echo "Image: ${{ inputs.registry }}/${IMAGE_NAME_LOWER}:${{ steps.image-tag.outputs.IMAGE_TAG }}"
+
+          helm upgrade --install client-sample ./helm/nextjs-app \
+            -n ${{ inputs.namespace }} \
             --create-namespace \
             -f ./helm/nextjs-app/values-production.yaml \
-            --set image.tag=${{ inputs.image_tag }} \
-            --set image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER} \
-            --set service.nodePort=${{ env.PRODUCTION_PORT }} \
+            --set-string "image.tag=${{ steps.image-tag.outputs.IMAGE_TAG }}" \
+            --set-string "image.repository=${{ inputs.registry }}/${IMAGE_NAME_LOWER}" \
+            --set-string "extraEnv[0].name=COMMON_SERVICE_URL" \
+            --set-string "extraEnv[0].value=${{ secrets.COMMON_SERVICE_URL }}" \
             --wait \
             --timeout 10m
 
+          echo "✓ Helm deployment completed"
+
       - name: Verify deployment
         run: |
-          kubectl rollout status deployment/nextjs-app -n ${{ github.event.repository.name }} --timeout=1m
+          kubectl rollout status deployment/client-sample -n ${{ inputs.namespace }} --timeout=5m
 
-      - name: Create Cloudflare Tunnel route
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
-          CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
-          REPOSITORY_NAME: ${{ github.event.repository.name }}
+          echo ""
+          echo "Deployment status:"
+          kubectl get deployment client-sample -n ${{ inputs.namespace }}
+
+          echo ""
+          echo "Pod status:"
+          kubectl get pods -n ${{ inputs.namespace }} -l app.kubernetes.io/name=nextjs-app
+
+          echo "✓ Deployment verification completed"
+
+      - name: Display deployment summary
         run: |
-          PORT="${{ env.PRODUCTION_PORT }}"
-          FULL_HOSTNAME="${REPOSITORY_NAME}.${CLOUDFLARE_DOMAIN}"
-
-          echo "Adding Cloudflare tunnel route for: $FULL_HOSTNAME -> http://localhost:${PORT}"
-
-          # Get current tunnel configuration
-          CURRENT_CONFIG=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json")
-
-          # Check if we got a valid response
-          if ! echo "$CURRENT_CONFIG" | jq -e '.success == true' >/dev/null 2>&1; then
-            echo "✗ Failed to get current tunnel configuration"
-            echo "$CURRENT_CONFIG" | jq '.'
-            exit 1
-          fi
-
-          # Extract current ingress rules
-          CURRENT_INGRESS=$(echo "$CURRENT_CONFIG" | jq '.result.config.ingress // []')
-
-          # Remove any existing entry for this hostname (if redeploying)
-          CURRENT_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" '
-            map(select(.hostname != $hostname))
-          ')
-
-          # Add the new route before the catch-all rule
-          NEW_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" --arg service "http://localhost:${PORT}" '
-            # Remove catch-all if present
-            map(select(.service != "http_status:404")) +
-            # Add new route
-            [{
-              "hostname": $hostname,
-              "service": $service
-            }] +
-            # Add catch-all at the end
-            [{"service": "http_status:404"}]
-          ')
-
-          # Update tunnel configuration with new ingress rules
-          UPDATE_RESPONSE=$(curl -s -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data "{\"config\": {\"ingress\": $NEW_INGRESS}}")
-
-          if echo "$UPDATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
-            echo "✓ Successfully added tunnel route for $FULL_HOSTNAME"
-            echo "Current routes:"
-            echo "$NEW_INGRESS" | jq -r '.[] | select(.hostname) | "  - \(.hostname) -> \(.service)"'
+          if [ -n "${{ inputs.image_name }}" ]; then
+            IMAGE_NAME="${{ inputs.image_name }}"
           else
-            echo "✗ Failed to update tunnel configuration"
-            echo "$UPDATE_RESPONSE" | jq '.'
-            exit 1
+            IMAGE_NAME="${{ github.repository }}"
           fi
+          IMAGE_NAME_LOWER=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
 
-      - name: Create Cloudflare DNS record
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
-          CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
-          REPOSITORY_NAME: ${{ github.event.repository.name }}
-        run: |
-          FULL_HOSTNAME="${REPOSITORY_NAME}.${CLOUDFLARE_DOMAIN}"
-
-          echo "Creating DNS A/CNAME record for: $FULL_HOSTNAME"
-
-          # Get Zone ID for the domain
-          ZONE_RESPONSE=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/zones?name=${CLOUDFLARE_DOMAIN}" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json")
-
-          ZONE_ID=$(echo "$ZONE_RESPONSE" | jq -r '.result[0].id')
-
-          if [ -z "$ZONE_ID" ] || [ "$ZONE_ID" = "null" ]; then
-            echo "✗ Failed to get Zone ID for domain: $CLOUDFLARE_DOMAIN"
-            echo "$ZONE_RESPONSE" | jq '.'
-            exit 1
-          fi
-
-          echo "✓ Found Zone ID: $ZONE_ID"
-
-          # Check if DNS record already exists
-          EXISTING_RECORD=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records?type=CNAME&name=${FULL_HOSTNAME}" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json")
-
-          RECORD_ID=$(echo "$EXISTING_RECORD" | jq -r '.result[0].id // empty')
-
-          if [ -n "$RECORD_ID" ]; then
-            echo "✓ DNS record already exists, updating it"
-            UPDATE_RESPONSE=$(curl -s -X PUT \
-              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$RECORD_ID" \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data "{
-                \"type\": \"CNAME\",
-                \"name\": \"${FULL_HOSTNAME}\",
-                \"content\": \"${CLOUDFLARE_TUNNEL_ID}.cfargotunnel.com\",
-                \"ttl\": 1,
-                \"proxied\": true
-              }")
-
-            if echo "$UPDATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
-              echo "✓ Successfully updated DNS record for $FULL_HOSTNAME"
-            else
-              echo "✗ Failed to update DNS record"
-              echo "$UPDATE_RESPONSE" | jq '.'
-              exit 1
-            fi
-          else
-            echo "Creating new DNS record"
-            CREATE_RESPONSE=$(curl -s -X POST \
-              "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records" \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data "{
-                \"type\": \"CNAME\",
-                \"name\": \"${FULL_HOSTNAME}\",
-                \"content\": \"${CLOUDFLARE_TUNNEL_ID}.cfargotunnel.com\",
-                \"ttl\": 1,
-                \"proxied\": true
-              }")
-
-            if echo "$CREATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
-              echo "✓ Successfully created DNS record for $FULL_HOSTNAME"
-            else
-              echo "✗ Failed to create DNS record"
-              echo "$CREATE_RESPONSE" | jq '.'
-              exit 1
-            fi
-          fi
+          echo ""
+          echo "════════════════════════════════════════════════════════"
+          echo "  Production Deployment Summary"
+          echo "════════════════════════════════════════════════════════"
+          echo ""
+          echo "Cluster:    ${{ vars.EKS_CLUSTER_NAME }}"
+          echo "Region:     ${{ vars.AWS_REGION }}"
+          echo "Namespace:  ${{ inputs.namespace }}"
+          echo "Image:      ${{ inputs.registry }}/${IMAGE_NAME_LOWER}:${{ steps.image-tag.outputs.IMAGE_TAG }}"
+          echo "URL:        https://client-sample.russellgpt.com"
+          echo ""
+          echo "✓ Production deployment completed successfully!"

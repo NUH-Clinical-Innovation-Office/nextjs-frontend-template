@@ -1,54 +1,51 @@
-# Production environment values
-replicaCount: 2
+# Production values (AWS EKS, sample-services namespace).
+# Fronted by an ALB with an ACM certificate for HTTPS.
+replicaCount: 1
 
-# Common labels for cost allocation and resource organization
 commonLabels:
-  team: "frontend-team"
-  project: "nextjs-frontend-template"
-  cost-center: "engineering"
+  project-name: "sample-services"
+  project-name-short: "sample-svc"
+  owner: "nuh-cio"
   environment: "production"
+  component: "client-sample"
 
 image:
-  repository: nextjs-frontend-template
+  repository: client-sample
   pullPolicy: Always
   tag: "latest"
 
+# ClusterIP: the ALB Ingress Controller targets pods directly.
 service:
-  type: NodePort
+  type: ClusterIP
   port: 3000
-  nodePort: 30001
+  targetPort: 3000
 
 serviceAccount:
   create: true
-  annotations:
-    # Required for Vault integration
-  name: "nextjs-frontend-template"
+  annotations: {}
+  name: "client-sample"
 
-# Vault Agent Injector annotations
 podAnnotations:
-  vault.hashicorp.io/agent-inject: "true"
-  vault.hashicorp.io/role: "nextjs-frontend-template"
-  vault.hashicorp.io/agent-inject-secret-env: "secret/data/nextjs-frontend-template/production"
-  vault.hashicorp.io/agent-inject-template-env: |
-    {{- with secret "secret/data/nextjs-frontend-template/production" -}}
-    export NEXTAUTH_URL="{{ .Data.data.NEXTAUTH_URL }}"
-    export NEXTAUTH_SECRET="{{ .Data.data.NEXTAUTH_SECRET }}"
-    export DATABASE_URL="{{ .Data.data.DATABASE_URL }}"
-    export API_URL="{{ .Data.data.API_URL }}"
-    {{- end -}}
+  # tmp and nextjs-cache are emptyDirs and can be recreated, so eviction is safe.
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
 
 env:
   - name: NODE_ENV
     value: "production"
-  - name: NEXT_PUBLIC_ENV
-    value: "production"
+  - name: NEXT_PUBLIC_APP_URL
+    value: "https://client-sample.russellgpt.com"
+
+# COMMON_SERVICE_URL is injected by the production deployment workflow. It
+# points at the cluster-internal common-service address; common-service has no
+# ingress, so this is the only way to reach it.
+extraEnv: []
 
 resources:
   limits:
-    cpu: 250m
+    cpu: 500m
     memory: 256Mi
   requests:
-    cpu: 150m
+    cpu: 250m
     memory: 256Mi
 
 # 192 MiB = 75% of the 256Mi memory limit above.
@@ -56,15 +53,35 @@ nodeOptions:
   maxOldSpaceSizeMiB: 192
 
 ingress:
-  enabled: false
-
-autoscaling:
   enabled: true
-  minReplicas: 1
-  maxReplicas: 2
-  targetCPUUtilizationPercentage: 60
-  targetMemoryUtilizationPercentage: 80
+  className: "alb"
+  annotations:
+    # ACM certificate ARN is set via the Helm command in CI/CD.
+    alb.ingress.kubernetes.io/group.name: "dev"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: "/"
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+  hosts:
+    - host: client-sample.russellgpt.com
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS is handled by the ACM certificate on the ALB.
+  tls: []
 
-podDisruptionBudget:
-  enabled: true
-  minAvailable: 1
+# Require the shared NUH CIO general-purpose EC2 nodes.
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-role
+          operator: In
+          values:
+          - nuh-cio-general
