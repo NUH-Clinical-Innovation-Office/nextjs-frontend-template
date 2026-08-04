@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
-import { headers } from 'next/headers';
 import './globals.css';
-import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 // Import env to validate environment variables on application startup
 import '@/lib/env';
@@ -18,37 +16,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'NUH | National University Hospital',
-  description: 'National University Hospital - Singapore leading university hospital',
+  title: 'Client Sample',
+  description: 'Sample Next.js client that calls common-service inside the cluster',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Read per-request nonce attached by `src/proxy.ts`, passed to
-  // `next-themes`' inline theme-detection script so it's permitted by the
-  // nonce-based CSP.
-  const nonce = (await headers()).get('x-nonce') ?? '';
-
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-        suppressHydrationWarning
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-          storageKey="theme"
-          nonce={nonce}
-        >
-          {children}
-          <Toaster />
-        </ThemeProvider>
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        {children}
+        <Toaster />
       </body>
     </html>
   );
