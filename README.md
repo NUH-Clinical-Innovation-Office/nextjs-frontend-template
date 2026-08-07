@@ -461,14 +461,8 @@ commonLabels:
 
 ## Documentation
 
-- [Features Inventory](docs/features.md) — Complete feature inventory with status
-- [Backend Integration](docs/backend-integration.md) — Backend API consumption reference
-- [Kubernetes Setup Guide](docs/kubernetes-setup.md) — Overview of Kubernetes cluster setup options
-- [Kubernetes on Raspberry Pi](docs/kubernetes-setup-raspberry-pi.md) — Self-hosted K3s cluster setup
-- [Kubernetes on AWS with Terraform](docs/kubernetes-setup-aws.md) — Production-ready EKS cluster using Terraform
-- [Helm & Kubernetes Guide](docs/helm-kubernetes-setup.md) — Helm package manager and chart deployment
-- [Vault Secrets Management](docs/vault-setup-and-deployment.md) — HashiCorp Vault integration
-- [Cloudflare & GitHub Integration](docs/cloudflare-github-setup.md) — Cloudflare Tunnel setup and GitHub Actions integration
+- [common-service Integration](docs/common-service-integration.md) — Topology, authentication, configuration, and error mapping
+- [Deployment](docs/deployment.md) — Building, publishing, and deploying to Kubernetes
 
 ## Contributing
 

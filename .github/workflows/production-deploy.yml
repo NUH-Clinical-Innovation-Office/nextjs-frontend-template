@@ -24,8 +24,11 @@ on:
         default: "sample-services"
     secrets:
       COMMON_SERVICE_URL:
-        description: "Cluster-internal base URL of common-service"
-        required: true
+        description: >-
+          Optional override for the cluster-internal base URL of
+          common-service. Leave unset to use the in-chart default
+          (http://common-service.sample-services.svc.cluster.local:8080).
+        required: false
       AWS_ROLE_ARN:
         description: "AWS role ARN for OIDC authentication"
         required: true
@@ -64,9 +67,6 @@ jobs:
         run: |
           MISSING_SECRETS=()
 
-          if [ -z "${{ secrets.COMMON_SERVICE_URL }}" ]; then
-            MISSING_SECRETS+=("COMMON_SERVICE_URL")
-          fi
           if [ -z "${{ secrets.AWS_ROLE_ARN }}" ]; then
             MISSING_SECRETS+=("AWS_ROLE_ARN")
           fi
@@ -82,7 +82,7 @@ jobs:
             printf '  - %s\n' "${MISSING_SECRETS[@]}"
             echo ""
             echo "Please configure these in your repository settings:"
-            echo "  Secrets: COMMON_SERVICE_URL, AWS_ROLE_ARN"
+            echo "  Secrets: AWS_ROLE_ARN"
             echo "  Variables: AWS_REGION, EKS_CLUSTER_NAME"
             exit 1
           fi
@@ -141,6 +141,22 @@ jobs:
           fi
           echo "✓ GHCR credentials secret found in ${{ inputs.namespace }} namespace"
 
+      - name: Verify common-service API key secret exists
+        run: |
+          # values-production.yaml mounts this Secret into the pod. Checking it
+          # here turns a CrashLoopBackOff into an actionable deploy failure.
+          if ! kubectl get secret client-sample-common-service -n ${{ inputs.namespace }} &>/dev/null; then
+            echo "✗ ERROR: Secret 'client-sample-common-service' not found in '${{ inputs.namespace }}' namespace"
+            echo ""
+            echo "This holds the developer API key used to authenticate against"
+            echo "common-service as a Consumer Backend. Create it using:"
+            echo "  kubectl create secret generic client-sample-common-service \\"
+            echo "    --from-literal=api-key=<developer-api-key> \\"
+            echo "    --namespace=${{ inputs.namespace }}"
+            exit 1
+          fi
+          echo "✓ common-service API key secret found in ${{ inputs.namespace }} namespace"
+
       - name: Deploy with Helm
         run: |
           if [ -n "${{ inputs.image_name }}" ]; then
@@ -153,14 +169,27 @@ jobs:
           echo "Deploying client-sample to production..."
           echo "Image: ${{ inputs.registry }}/${IMAGE_NAME_LOWER}:${{ steps.image-tag.outputs.IMAGE_TAG }}"
 
+          # Only override COMMON_SERVICE_URL when the secret is actually set.
+          # Passing an empty --set-string would append an empty env entry that
+          # wins over the chart default and break every upstream call, so the
+          # override has to be conditional rather than unconditional.
+          COMMON_SERVICE_URL_OVERRIDE="${{ secrets.COMMON_SERVICE_URL }}"
+          EXTRA_ARGS=()
+          if [ -n "$COMMON_SERVICE_URL_OVERRIDE" ]; then
+            EXTRA_ARGS+=(--set-string "extraEnv[0].name=COMMON_SERVICE_URL")
+            EXTRA_ARGS+=(--set-string "extraEnv[0].value=$COMMON_SERVICE_URL_OVERRIDE")
+            echo "COMMON_SERVICE_URL: overridden by repository secret"
+          else
+            echo "COMMON_SERVICE_URL: using chart default"
+          fi
+
           helm upgrade --install client-sample ./helm/nextjs-app \
             -n ${{ inputs.namespace }} \
             --create-namespace \
             -f ./helm/nextjs-app/values-production.yaml \
             --set-string "image.tag=${{ steps.image-tag.outputs.IMAGE_TAG }}" \
             --set-string "image.repository=${{ inputs.registry }}/${IMAGE_NAME_LOWER}" \
-            --set-string "extraEnv[0].name=COMMON_SERVICE_URL" \
-            --set-string "extraEnv[0].value=${{ secrets.COMMON_SERVICE_URL }}" \
+            "${EXTRA_ARGS[@]}" \
             --wait \
             --timeout 10m
 

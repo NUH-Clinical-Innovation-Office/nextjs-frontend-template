@@ -72,6 +72,18 @@ env: []
 # Injected at deployment time (COMMON_SERVICE_URL).
 extraEnv: []
 
+# Developer API key used to authenticate against common-service as a Consumer
+# Backend. Referenced from an existing Secret so the credential never appears
+# in a values file. Leave secretName empty to omit the variable entirely, in
+# which case the app falls back to requiring a caller-supplied bearer token.
+#
+# Create the Secret out of band, e.g.
+#   kubectl create secret generic client-sample-common-service \
+#     --from-literal=api-key=<key> -n sample-services
+commonServiceApiKey:
+  secretName: ""
+  secretKey: "api-key"
+
 # Environment variables from secrets/configmaps.
 envFrom: []
 

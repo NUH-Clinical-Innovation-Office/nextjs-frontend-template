@@ -38,8 +38,13 @@ quality checks (lint, test, type-check, knip)
 
 | Repo                   | Secrets                                         | Variables                       |
 |------------------------|-------------------------------------------------|---------------------------------|
-| `nuhs/client-sample`   | `AWS_ROLE_ARN`, `COMMON_SERVICE_URL`            | `AWS_REGION`, `EKS_CLUSTER_NAME` |
+| `nuhs/client-sample`   | `AWS_ROLE_ARN` (`COMMON_SERVICE_URL` optional)  | `AWS_REGION`, `EKS_CLUSTER_NAME` |
 | `nuhs/common-service-sample` | `AWS_ROLE_ARN`, `AUTH_SERVICE_ISSUER`, `AUTH_SERVICE_JWKS_URL`, `AUTH_SERVICE_AUDIENCE` | `AWS_REGION`, `EKS_CLUSTER_NAME` |
+
+`COMMON_SERVICE_URL` is a cluster DNS name rather than a credential, so it
+lives in `values-production.yaml`. Set the secret only to override it for a
+cluster that places common-service elsewhere; when set it is appended after
+`env` as an `extraEnv` entry, and the later value wins.
 
 Every namespace the workflows deploy to needs a pre-created
 `ghcr-credentials` secret of type `kubernetes.io/dockerconfigjson` so pods can
@@ -50,6 +55,16 @@ kubectl create secret docker-registry ghcr-credentials \
   --docker-server=ghcr.io \
   --docker-username=<github-username> \
   --docker-password=<github-token> \
+  --namespace=sample-services
+```
+
+client-sample additionally needs the developer API key it presents to
+common-service as a Consumer Backend. The deploy workflow verifies this Secret
+exists and fails with an actionable message if it does not:
+
+```sh
+kubectl create secret generic client-sample-common-service \
+  --from-literal=api-key=<developer-api-key> \
   --namespace=sample-services
 ```
 
@@ -69,8 +84,15 @@ bun install
 bun run dev
 ```
 
-Mint a JWT against a running auth-service, paste it into the form, and the
-flow ends to end without ever leaving your laptop.
+Set `COMMON_SERVICE_API_KEY` in `.env.local` and the app authenticates as a
+Consumer Backend with no credential in the browser at all — this is the path
+that matches production.
+
+Leave it unset and the form asks for a bearer token instead. Note that a token
+minted directly from auth-service's `/oauth2/token` is **rejected with 401**:
+its `aud` defaults to the requesting `client_id`, which never matches
+common-service's audience. Only a token produced by the API-key exchange is
+accepted. See [common-service Integration](common-service-integration.md).
 
 ## CI/CD plumbing
 
@@ -81,7 +103,8 @@ flow ends to end without ever leaving your laptop.
 2. Assume AWS role via OIDC.
 3. Update kubeconfig for the EKS cluster.
 4. Create namespace if missing.
-5. Verify `ghcr-credentials` exists in that namespace.
+5. Verify `ghcr-credentials` exists in that namespace, and (client-sample
+   only) that `client-sample-common-service` holds the API key.
 6. `helm upgrade --install ... --wait` with the right values file and
    extraEnv overrides for secrets.
 7. Rollout status check.

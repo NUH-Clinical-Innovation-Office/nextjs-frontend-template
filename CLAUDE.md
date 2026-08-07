@@ -57,6 +57,19 @@ bun run knip          # Check for unused dependencies
 - Server variables: no prefix (server-side only, for secrets)
 - All environment variables are type-safe with TypeScript autocomplete
 - Use `import { env } from '@/lib/env'` to access validated environment variables
+- Empty strings are rejected rather than falling back to defaults, since Zod's
+  `.default()` only fires on `undefined` and a blank Helm/CI override would
+  otherwise validate into a broken value
+
+### common-service Integration
+
+The app proxies to common-service through `/api/notes` because that service has
+no ingress. It authenticates as a Consumer Backend with `COMMON_SERVICE_API_KEY`
+(sent as `X-API-Key`), falling back to a caller-supplied bearer token when no
+key is configured. A token minted directly by auth-service's `/oauth2/token` is
+rejected with 401 — only a token from the API-key exchange is accepted.
+
+See [docs/common-service-integration.md](docs/common-service-integration.md).
 
 ### Path Aliases
 
@@ -95,16 +108,21 @@ bun run knip          # Check for unused dependencies
 
 ### Secrets Management
 
-- Required GitHub secrets for deployments (feature, staging, and production all
-  target the same cluster via a bearer token):
-  - `KUBECONFIG_SERVER`: Cluster API URL (Cloudflare tunnel hostname)
-  - `KUBECONFIG_TOKEN`: ServiceAccount bearer token for cluster access
-  - `CLOUDFLARE_API_TOKEN`: API token with tunnel and DNS permissions
-  - `CLOUDFLARE_ACCOUNT_ID`: Cloudflare account ID
-  - `CLOUDFLARE_TUNNEL_ID`: Cloudflare Tunnel ID
+Deployment targets AWS EKS (namespace `sample-services`) and authenticates via
+GitHub OIDC rather than a stored kubeconfig.
+
+- Required GitHub secrets:
+  - `AWS_ROLE_ARN`: Role assumed via OIDC for cluster access
+- Optional GitHub secrets:
+  - `COMMON_SERVICE_URL`: Overrides the in-chart cluster-internal address
 - Required GitHub variables:
-  - `CLOUDFLARE_DOMAIN`: Base domain for deployments
-- HashiCorp Vault integration available (see `docs/vault-setup-and-deployment.md`)
+  - `AWS_REGION`, `EKS_CLUSTER_NAME`
+- Kubernetes Secrets that must exist in the namespace before deploying:
+  - `ghcr-credentials`: Image pull secret for GHCR
+  - `client-sample-common-service`: Holds `api-key`, the developer API key
+    presented to common-service
+
+See `docs/deployment.md` for the exact commands.
 
 ## Docker
 

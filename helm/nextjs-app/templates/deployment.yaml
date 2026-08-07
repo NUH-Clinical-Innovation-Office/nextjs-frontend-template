@@ -50,7 +50,7 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
-        {{- if or .Values.nodeOptions.maxOldSpaceSizeMiB .Values.env .Values.extraEnv }}
+        {{- if or .Values.nodeOptions.maxOldSpaceSizeMiB .Values.env .Values.extraEnv .Values.commonServiceApiKey.secretName }}
         env:
           {{- if .Values.nodeOptions.maxOldSpaceSizeMiB }}
             - name: NODE_OPTIONS
@@ -61,6 +61,21 @@ spec:
           {{- end }}
           {{- with .Values.extraEnv }}
           {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{/*
+          The common-service API key is a credential, so it is referenced from
+          an existing Secret rather than templated in as a literal value. That
+          keeps it out of the chart, out of values files, and out of
+          `helm get values` output.
+          */}}
+          {{- with .Values.commonServiceApiKey }}
+          {{- if .secretName }}
+            - name: COMMON_SERVICE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .secretName }}
+                  key: {{ .secretKey | default "api-key" }}
+          {{- end }}
           {{- end }}
         {{- end }}
         {{- with .Values.envFrom }}

@@ -35,10 +35,28 @@ env:
   - name: NEXT_PUBLIC_APP_URL
     value: "https://client-sample.russellgpt.com"
 
-# COMMON_SERVICE_URL is injected by the production deployment workflow. It
-# points at the cluster-internal common-service address; common-service has no
-# ingress, so this is the only way to reach it.
+  # Cluster-internal address of common-service. This is a Kubernetes DNS name,
+  # not a secret: common-service is deployed by its own chart as release
+  # `common-service` into this same `sample-services` namespace, and its Service
+  # listens on 8080. It has no ingress, so this is the only way to reach it.
+  #
+  # Kept here rather than in a GitHub secret so the chart is deployable on its
+  # own. The deploy workflow can still override it via extraEnv when a cluster
+  # places common-service elsewhere.
+  - name: COMMON_SERVICE_URL
+    value: "http://common-service.sample-services.svc.cluster.local:8080"
+
+# Optional per-cluster overrides injected by the deployment workflow. Entries
+# here are appended after `env`, and the later value wins, so setting
+# COMMON_SERVICE_URL as a repository secret overrides the default above.
 extraEnv: []
+
+# Sourced from a Secret created out of band in the sample-services namespace.
+# Without it the deployed app would prompt every visitor for a bearer token,
+# and a token minted by /oauth2/token is rejected by common-service anyway.
+commonServiceApiKey:
+  secretName: "client-sample-common-service"
+  secretKey: "api-key"
 
 resources:
   limits:
