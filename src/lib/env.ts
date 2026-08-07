@@ -33,9 +33,35 @@ const serverSchema = z.object({
    * service has no ingress, so this hostname resolves only from inside the
    * cluster and must never be inlined into the browser bundle.
    */
+  /*
+   * An empty string is treated as "not set". Zod's .default() only fires on
+   * undefined, so without this a blank value from a Helm/CI override would
+   * validate cleanly and every upstream call would resolve to `http:///...`.
+   * Failing loudly at startup is better than a runtime fetch error per request.
+   */
   COMMON_SERVICE_URL: z
     .string()
+    .transform((val) => (val.trim() === '' ? undefined : val))
+    .pipe(z.url({ error: 'COMMON_SERVICE_URL must be an absolute URL' }))
+    .optional()
     .default('http://common-service.sample-services.svc.cluster.local:8080'),
+
+  /*
+   * Developer API key identifying this app as a Consumer Backend to
+   * common-service. Sent as `X-API-Key`; common-service exchanges it at
+   * auth-service for a short-lived, audience-bound JWT and caches the result.
+   *
+   * Server-only and never NEXT_PUBLIC_: this is a real credential, and
+   * inlining it into the browser bundle would publish it to every visitor.
+   *
+   * Optional. When unset, the proxy falls back to requiring a caller-supplied
+   * bearer token, which is what keeps local development possible without
+   * provisioning a key.
+   */
+  COMMON_SERVICE_API_KEY: z
+    .string()
+    .transform((val) => (val.trim() === '' ? undefined : val))
+    .optional(),
 
   /** Upstream request timeout in milliseconds. */
   API_TIMEOUT: z

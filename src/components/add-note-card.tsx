@@ -14,19 +14,47 @@ type NoteResult = {
 };
 
 /**
+ * Picks the message to show for a failed proxy call.
+ *
+ * A 429 carries Retry-After from common-service's rate limiter, and surfacing
+ * the wait turns a dead end into something the user can act on.
+ */
+function errorMessage(response: Response, data: { error?: string }): string {
+  if (response.status === 429) {
+    const retryAfter = response.headers.get('Retry-After');
+    if (retryAfter) {
+      return `Rate limited. Try again in ${retryAfter}s.`;
+    }
+    return data.error ?? 'Rate limited';
+  }
+  return data.error ?? 'Request failed';
+}
+
+type AddNoteCardProps = {
+  /**
+   * Whether the browser must supply a bearer token. False when the server has
+   * its own API key, in which case no credential is collected here at all.
+   */
+  requiresToken: boolean;
+};
+
+/**
  * Posts a note to common-service via the /api/notes proxy.
  *
- * The token lives in component state only - never localStorage, a cookie, or
- * the URL - so a page refresh clears it. Samples get copied, and a bearer
- * token persisted client-side is exactly the habit not worth propagating.
+ * When the server holds an API key it authenticates as a Consumer Backend and
+ * this form collects no credential. Otherwise it falls back to asking for a
+ * bearer token, which lives in component state only - never localStorage, a
+ * cookie, or the URL - so a page refresh clears it. Samples get copied, and a
+ * bearer token persisted client-side is exactly the habit not worth
+ * propagating.
  */
-export function AddNoteCard() {
+export function AddNoteCard({ requiresToken }: AddNoteCardProps) {
   const [token, setToken] = useState('');
   const [text, setText] = useState('');
   const [pending, setPending] = useState(false);
   const [result, setResult] = useState<NoteResult | null>(null);
 
-  const canSubmit = token.trim() !== '' && text.trim() !== '' && !pending;
+  const canSubmit = (!requiresToken || token.trim() !== '') && text.trim() !== '' && !pending;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -41,12 +69,12 @@ export function AddNoteCard() {
       const response = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, text }),
+        body: JSON.stringify(requiresToken ? { token, text } : { text }),
       });
       const data = await response.json();
 
       if (!response.ok) {
-        toast.error(data.error ?? 'Request failed');
+        toast.error(errorMessage(response, data));
         return;
       }
 
@@ -66,22 +94,27 @@ export function AddNoteCard() {
         <CardTitle>Add a note</CardTitle>
         <CardDescription>
           Sends a note to common-service over the cluster-internal network.
+          {requiresToken
+            ? ' No API key is configured, so a bearer token is required.'
+            : ' Authenticated server-side with this app’s API key.'}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="token">Auth-service token</Label>
-            <Input
-              id="token"
-              type="password"
-              autoComplete="off"
-              spellCheck={false}
-              placeholder="Paste your JWT"
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-            />
-          </div>
+          {requiresToken ? (
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="token">Auth-service token</Label>
+              <Input
+                id="token"
+                type="password"
+                autoComplete="off"
+                spellCheck={false}
+                placeholder="Paste your JWT"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+              />
+            </div>
+          ) : null}
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="text">Note</Label>
