@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
+import { TelemetryProvider } from '@/components/providers/telemetry-provider';
 import { Toaster } from '@/components/ui/sonner';
 // Import env to validate environment variables on application startup
 import '@/lib/env';
@@ -28,7 +29,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        {children}
+        <TelemetryProvider>{children}</TelemetryProvider>
         <Toaster />
       </body>
     </html>

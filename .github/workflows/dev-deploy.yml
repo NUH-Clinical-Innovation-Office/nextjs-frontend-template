@@ -1,0 +1,88 @@
+name: Development Deploy (AWS EKS)
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        description: "Full immutable GHCR image reference, or the versioned tag"
+        required: true
+        type: string
+    secrets:
+      # Declared explicitly so callers cannot rely on `secrets: inherit`. An
+      # undeclared secret referenced under workflow_call resolves to empty and
+      # the deploy fails late, at role assumption, instead of at the call site.
+      AWS_DEV_DEPLOY_ROLE_ARN:
+        description: OIDC role assumed to deploy to the development cluster
+        required: true
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: Full immutable GHCR image reference
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  # Required repository configuration is checked here, at the call site, so a
+  # missing secret fails immediately with a named cause rather than surfacing as
+  # an opaque failure inside the shared workflow.
+  preflight:
+    name: Validate required configuration
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Verify required secrets
+        env:
+          AWS_DEV_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEV_DEPLOY_ROLE_ARN }}
+        run: |
+          set -euo pipefail
+          missing=()
+          [ -n "$AWS_DEV_DEPLOY_ROLE_ARN" ] || missing+=("AWS_DEV_DEPLOY_ROLE_ARN (secret)")
+
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "::error::Missing required repository configuration:"
+            printf '  - %s\n' "${missing[@]}"
+            exit 1
+          fi
+          echo "All required secrets are configured"
+
+  deploy:
+    name: Deploy Development
+    needs: preflight
+    permissions:
+      contents: read
+      packages: read
+      id-token: write
+    # Pinned reusable workflow: a moved tag cannot change deploy code.
+    uses: nuhs-projects/ci-workflows/.github/workflows/deploy-eks-helm.yml@v1
+    with:
+      environment_name: development
+      environment_url: https://client-sample-dev.russellgpt.com
+      aws_region: ap-southeast-1
+      eks_cluster_name: dev
+      namespace: eai-otherapps
+      helm_chart_path: helm/nextjs-app
+      helm_values_file: helm/nextjs-app/values-dev.yaml
+      chart_release_name: client-sample
+      image_tag: ${{ inputs.image_tag }}
+      # `nameOverride: client-sample` in values-dev.yaml makes the Deployment
+      # name the release name, not the chart name.
+      required_rollout_deployments: client-sample
+      # eai-otherapps is shared with other applications and may not exist yet on
+      # a new cluster. The shared workflow's namespace step is idempotent.
+      create_namespace: true
+      # The ghcr-credentials imagePullSecret must exist or the first pull fails
+      # with an unhelpful ImagePullBackOff instead of a named error.
+      require_ghcr_credentials: true
+      # No extra_yaml_overrides. COMMON_SERVICE_URL and the telemetry settings
+      # all come from values-dev.yaml, and the two credentials the app needs
+      # (the common-service API key and the OTel collector token) are read from
+      # Kubernetes Secrets by reference, so nothing secret passes through CI.
+    secrets:
+      # Forward only the deploy role. `inherit` would hand the whole caller
+      # secret scope to a workflow that needs exactly one secret.
+      AWS_DEV_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEV_DEPLOY_ROLE_ARN }}

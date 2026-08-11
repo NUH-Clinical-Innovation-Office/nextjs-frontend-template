@@ -87,6 +87,43 @@ commonServiceApiKey:
 # Environment variables from secrets/configmaps.
 envFrom: []
 
+# OpenTelemetry. Disabled by default: without a collector the browser SDK stays
+# off and the /telemetry/* routes answer with {"disabled": true}.
+otel:
+  enabled: false
+  # Collector base URL, no /v1/<signal> suffix — the proxy appends it.
+  collectorUrl: ""
+  # Identity forced onto every batch server-side, overriding client-supplied
+  # values so a tampered browser cannot masquerade as another service.
+  serviceName: "client-sample"
+  environment: "development"
+  tenant: "client-sample"
+
+# Pulls the collector's bearer credential from Parameter Store into a Secret.
+# Requires external-secrets and the namespace SecretStore to exist.
+otelExternalSecret:
+  enabled: false
+  secretName: "otel-client-sample-api-key"
+  remoteKey: "/nuh-cio/otel/proxies/client-sample"
+  remoteProperty: "api-key"
+
+# Prometheus scrape endpoint for the Next.js server process. Served on its own
+# port so it is reachable in-cluster without going through the public ingress.
+# `path` must match DEFAULT_METRICS_PATH in src/telemetry/metrics-server.ts.
+metrics:
+  enabled: false
+  port: 9464
+  path: /metrics
+  # Requires the Prometheus Operator CRD. Off by default so the chart installs
+  # on a cluster without kube-prometheus-stack.
+  serviceMonitor:
+    enabled: false
+    # Defaults to the release namespace.
+    namespace: ""
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+
 livenessProbe:
   httpGet:
     path: /

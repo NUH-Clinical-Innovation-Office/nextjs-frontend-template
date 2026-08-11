@@ -15,6 +15,13 @@ RUN bun install --frozen-lockfile
 # Copy source code
 COPY . .
 
+# Browser telemetry is compiled into the client bundle, so this flag must be
+# present at build time — setting it only in Helm turns on the server half and
+# leaves the browser SDK inert. Defaults to off so a plain `docker build`
+# produces an image that ships no telemetry.
+ARG NEXT_PUBLIC_OTEL_ENABLED="false"
+ENV NEXT_PUBLIC_OTEL_ENABLED=${NEXT_PUBLIC_OTEL_ENABLED}
+
 # Build the application
 RUN bun run build
 

@@ -20,6 +20,13 @@ import { z } from 'zod';
  */
 const clientSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().default('http://localhost:3000'),
+
+  /**
+   * Enables the browser OpenTelemetry SDK. Inlined into the bundle at image
+   * build time, so flipping it in Helm only affects the server process — the
+   * browser half also needs the Docker build arg.
+   */
+  NEXT_PUBLIC_OTEL_ENABLED: z.string().optional(),
 });
 
 /**
@@ -62,6 +69,29 @@ const serverSchema = z.object({
     .string()
     .transform((val) => (val.trim() === '' ? undefined : val))
     .optional(),
+
+  /**
+   * OTLP collector base URL, with no `/v1/<signal>` suffix — the proxy appends
+   * it. Empty or unset disables telemetry forwarding, and the `/telemetry/*`
+   * routes then answer `{ disabled: true }` rather than failing.
+   */
+  OTLP_COLLECTOR_URL: z
+    .union([z.literal(''), z.url('OTLP_COLLECTOR_URL must be a valid URL')])
+    .optional(),
+
+  /**
+   * Bearer credential for the collector's authenticated receiver. Server-side
+   * only: never sent to the browser and never logged.
+   */
+  OTEL_API_KEY: z.string().optional(),
+
+  /*
+   * Identity forced onto every forwarded batch, overriding whatever the client
+   * supplied, so a tampered browser cannot masquerade as another service.
+   */
+  OTEL_SERVICE_NAME: z.string().default('client-sample'),
+  OTEL_DEPLOYMENT_ENVIRONMENT: z.string().default('development'),
+  OTEL_TENANT: z.string().default('client-sample'),
 
   /** Upstream request timeout in milliseconds. */
   API_TIMEOUT: z

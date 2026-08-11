@@ -71,6 +71,35 @@ rejected with 401 — only a token from the API-key exchange is accepted.
 
 See [docs/common-service-integration.md](docs/common-service-integration.md).
 
+### Observability
+
+Telemetry reaches Grafana by two independent routes, and it matters which is
+which when something stops appearing:
+
+| Signal | Path | Sink |
+| --- | --- | --- |
+| Server logs (stdout) | Collector `filelog` receiver | Loki |
+| Browser logs | `/telemetry/logs` proxy | Loki |
+| Server metrics | Prometheus scrapes `:9464/metrics` via ServiceMonitor | Prometheus |
+| Browser metrics (Web Vitals) | `/telemetry/metrics` proxy | Prometheus |
+| Browser traces | `/telemetry/traces` proxy | Tempo |
+
+- `src/instrumentation.ts` starts the Prometheus endpoint on its own port
+  (`METRICS_ENABLED=true`), deliberately not a Next.js route: it stays off the
+  public ingress and clear of the `/api/*` common-service proxy.
+- `src/lib/telemetry/proxy.ts` is the only browser-reachable path to the
+  collector. It enforces content type, body size, rate limit, and same-site
+  origin, and it **overwrites** `service.name`/`deployment.environment`/`tenant`
+  server-side so a tampered browser cannot masquerade as another service.
+- The collector credential never reaches the browser — it is attached
+  server-side in the proxy.
+- `NEXT_PUBLIC_OTEL_ENABLED` is inlined into the client bundle at **image build
+  time** (Dockerfile `ARG`), so enabling telemetry in Helm alone turns on the
+  server half only. The browser SDK also needs the `otel_enabled: true` input to
+  `reusable-docker.yml`.
+- The browser SDK self-disables outside production builds, so local development
+  never ships telemetry.
+
 ### Path Aliases
 
 - `@/` resolves to `src/` directory (configured in `tsconfig.json`, read natively by `bun test`)
@@ -79,21 +108,25 @@ See [docs/common-service-integration.md](docs/common-service-integration.md).
 
 ### GitHub Actions Workflows
 
-- **`.github/workflows/ci.yml`**: Runs on all PRs (build, lint, test, type-check)
-- **`.github/workflows/staging-deploy.yml`**: Auto-deploy to staging on merge to `main`
-- **`.github/workflows/production-deploy.yml`**: Production deployment (requires approval)
-- **`.github/workflows/feature-deploy.yml`**: Auto-deploy feature branches to preview URLs
-- **`.github/workflows/feature-cleanup.yml`**: Auto-cleanup when feature branches are deleted
+- **`.github/workflows/ci.yml`**: Runs on push to `main` — build, security scan,
+  then deploy to development
+- **`.github/workflows/pull-request.yml`**: Quality checks on PRs
+- **`.github/workflows/dev-deploy.yml`**: Deploys to AWS EKS namespace
+  `eai-otherapps`, delegating to the pinned shared workflow
+  `nuhs-projects/ci-workflows/.github/workflows/deploy-eks-helm.yml@v1`
+- **`.github/workflows/production-deploy.yml`**: Retained for `workflow_dispatch`
+  only; it is no longer wired into `ci.yml`
 
-### Feature Branch Deployments
+### Development Deployment
 
-- Each feature branch gets automatic preview deployment
-- Preview URL format: `https://{branch-name}-dev-{repo-name}.{domain}`
-- Deploys to separate Kubernetes namespace: `nextjs-{branch-name}`
-- Each deployment gets unique NodePort allocation (31000-32000 range)
-- Port mappings stored in ConfigMap `feature-branch-port-mappings` in default namespace
-- Cloudflare Tunnel routes and DNS records are automatically created/updated
-- Cleanup automatically triggered when feature branch is deleted
+- Namespace `eai-otherapps` on the `dev` EKS cluster, release name `client-sample`
+- Values file: `helm/nextjs-app/values-dev.yaml`
+- URL: `https://client-sample-dev.russellgpt.com` (shares the `dev` ALB group)
+- Authenticates via GitHub OIDC using the `AWS_DEV_DEPLOY_ROLE_ARN` secret
+- `nameOverride: client-sample` is load-bearing: `app.kubernetes.io/name` is what
+  the OTel collector's NetworkPolicy matches to admit this pod as a sender.
+  Without it the label would be the chart name (`nextjs-app`) and every
+  telemetry export would be dropped at L3/L4 with no application-level error.
 
 ### Kubernetes & Helm
 
@@ -108,19 +141,23 @@ See [docs/common-service-integration.md](docs/common-service-integration.md).
 
 ### Secrets Management
 
-Deployment targets AWS EKS (namespace `sample-services`) and authenticates via
+Deployment targets AWS EKS (namespace `eai-otherapps`) and authenticates via
 GitHub OIDC rather than a stored kubeconfig.
 
 - Required GitHub secrets:
-  - `AWS_ROLE_ARN`: Role assumed via OIDC for cluster access
-- Optional GitHub secrets:
-  - `COMMON_SERVICE_URL`: Overrides the in-chart cluster-internal address
-- Required GitHub variables:
-  - `AWS_REGION`, `EKS_CLUSTER_NAME`
+  - `AWS_DEV_DEPLOY_ROLE_ARN`: Role assumed via OIDC for cluster access
 - Kubernetes Secrets that must exist in the namespace before deploying:
   - `ghcr-credentials`: Image pull secret for GHCR
   - `client-sample-common-service`: Holds `api-key`, the developer API key
     presented to common-service
+- Created by the chart via External Secrets (no manual step, but the underlying
+  Parameter Store entry must be seeded out of band):
+  - `otel-client-sample-api-key`: Bearer token for the OTel collector, synced
+    from `/nuh-cio/otel/proxies/client-sample`
+
+No credential passes through CI. Both secrets are read by reference from the
+namespace, so nothing sensitive appears in a values file or in
+`helm get values` output.
 
 See `docs/deployment.md` for the exact commands.
 

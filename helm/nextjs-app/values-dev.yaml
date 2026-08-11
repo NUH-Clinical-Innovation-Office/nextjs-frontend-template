@@ -1,0 +1,177 @@
+# Development values for AWS EKS, namespace `eai-otherapps`.
+#
+# This is the profile CI deploys. It differs from values-production.yaml in
+# that it targets the shared eai-otherapps namespace alongside auth-service and
+# common-service-sample, and it turns on the full telemetry path: Prometheus
+# scraping via ServiceMonitor, and logs/traces/metrics to the OTLP collector in
+# nuh-cio (which fans out to Loki, Tempo, and Prometheus).
+replicaCount: 1
+
+# `nameOverride` sets app.kubernetes.io/name, which is what the collector's
+# NetworkPolicy in nuh-cio matches on to admit this pod as an approved sender.
+# Without it the label would be the chart name (`nextjs-app`) and every export
+# would be dropped at L3/L4 with no application-level error.
+nameOverride: "client-sample"
+
+# Common labels for cost allocation and resource organization.
+# Aligned with Terraform standards from nuh-cio-terraform.
+commonLabels:
+  project-name: "sample-services"
+  project-name-short: "sample-svc"
+  owner: "nuh-cio"
+  environment: "development"
+  component: "client-sample"
+
+image:
+  # Fully qualified: an unqualified name resolves against whatever registry the
+  # node runtime defaults to, which is not necessarily GHCR.
+  repository: ghcr.io/nuhs-projects/client-sample
+  pullPolicy: Always
+  # Deliberately empty. CI always supplies the immutable main-<40-char-sha>
+  # tag, and _helpers.tpl rejects anything that does not match that shape, so a
+  # manual `helm install` cannot deploy an unpinned image.
+  tag: ""
+
+# ClusterIP: the ALB Ingress Controller targets pods directly.
+service:
+  type: ClusterIP
+  port: 3000
+  targetPort: 3000
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "client-sample"
+
+podAnnotations:
+  # tmp and nextjs-cache are emptyDirs and can be recreated, so eviction is safe.
+  cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+  # No prometheus.io/* scrape annotations: discovery goes through the
+  # ServiceMonitor below. Running both would double-scrape the same endpoint.
+
+env:
+  # NODE_ENV stays "production" regardless of the deployment environment: it
+  # selects the optimised Next.js server build, not the target environment.
+  - name: NODE_ENV
+    value: "production"
+  - name: NEXT_PUBLIC_APP_URL
+    value: "https://client-sample-dev.russellgpt.com"
+
+  # Cluster-internal address of common-service. A Kubernetes DNS name, not a
+  # secret. The common-service-sample repository deploys its chart under the
+  # release name `common-service` (see its production-deploy.yml), and with no
+  # nameOverride the Service is therefore named `common-service` and listens on
+  # 8080. It has no ingress, so this is the only way to reach it. The fully
+  # qualified name is used so it stays correct if either release moves.
+  #
+  # This assumes common-service is deployed into eai-otherapps alongside this
+  # app; it currently targets sample-services, so its own pipeline must move
+  # before this address resolves. Override via extraEnv in the meantime.
+  - name: COMMON_SERVICE_URL
+    value: "http://common-service.eai-otherapps.svc.cluster.local:8080"
+
+# Optional per-cluster overrides injected by the deployment workflow. Entries
+# here are appended after `env`, and the later value wins.
+extraEnv: []
+
+# Sourced from a Secret created out of band in the eai-otherapps namespace.
+# Without it the deployed app would prompt every visitor for a bearer token,
+# and a token minted directly by /oauth2/token is rejected by common-service.
+commonServiceApiKey:
+  secretName: "client-sample-common-service"
+  secretKey: "api-key"
+
+# Memory request equals limit so the pod lands in the Guaranteed QoS class and
+# is not evicted first under node pressure. CPU request is lower than the limit
+# deliberately: dev traffic is bursty and low, so the pod reserves little but
+# can still burst during a rollout or a cold start.
+resources:
+  limits:
+    cpu: 250m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Keep the Node.js heap below the 256Mi container limit. V8 ignores cgroup
+# limits, so a heap cap at or above the limit gets the pod OOMKilled instead of
+# triggering GC.
+nodeOptions:
+  maxOldSpaceSizeMiB: 192
+
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    # Shares the `dev` ALB with the other eai-otherapps frontends rather than
+    # provisioning a second load balancer.
+    alb.ingress.kubernetes.io/group.name: "dev"
+    alb.ingress.kubernetes.io/scheme: "internet-facing"
+    alb.ingress.kubernetes.io/target-type: "ip"
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    alb.ingress.kubernetes.io/healthcheck-path: "/"
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "15"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "5"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "2"
+  hosts:
+    - host: client-sample-dev.russellgpt.com
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS is handled by the ACM certificate on the ALB.
+  tls: []
+
+# OpenTelemetry. Browser signals reach the collector through this app's
+# /telemetry/* proxy, which authenticates with the bearer token below and
+# terminates at the collector's dedicated client-sample receiver on port 4322.
+# The collector then fans out: logs to Loki, traces to Tempo, metrics to
+# Prometheus via remote write.
+#
+# NEXT_PUBLIC_OTEL_ENABLED is inlined into the browser bundle at image build
+# time, so this flag alone governs server-side export; browser telemetry also
+# needs the Docker build arg of the same name.
+otel:
+  enabled: true
+  collectorUrl: "http://opentelemetry-collector.nuh-cio.svc.cluster.local:4322"
+  serviceName: "client-sample"
+  environment: "development"
+  tenant: "client-sample"
+
+# Mounts OTEL_API_KEY from Parameter Store via external-secrets. If the
+# parameter or the SecretStore is missing the ExternalSecret never syncs, but
+# the pod still starts: the secretKeyRef is marked optional, so OTEL_API_KEY is
+# simply unset and the proxy forwards without an Authorization header.
+otelExternalSecret:
+  enabled: true
+  secretName: "otel-client-sample-api-key"
+  remoteKey: "/nuh-cio/otel/proxies/client-sample"
+  remoteProperty: "api-key"
+
+# Prometheus metrics + ServiceMonitor discovery. The kube-prometheus-stack
+# Prometheus must also be told to watch this namespace via
+# `serviceMonitorNamespaceSelector` before the target is actually scraped —
+# see the companion change in the helm repo. Until then the endpoint is still
+# reachable in-cluster on port 9464.
+metrics:
+  enabled: true
+  port: 9464
+  path: /metrics
+  serviceMonitor:
+    enabled: true
+    namespace: ""
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+
+# Require the shared NUH CIO general-purpose EC2 nodes.
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: node-role
+          operator: In
+          values:
+          - nuh-cio-general

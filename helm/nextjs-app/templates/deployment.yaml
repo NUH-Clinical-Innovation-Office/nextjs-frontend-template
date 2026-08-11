@@ -36,6 +36,11 @@ spec:
         - name: http
           containerPort: {{ .Values.service.targetPort }}
           protocol: TCP
+        {{- if .Values.metrics.enabled }}
+        - name: metrics
+          containerPort: {{ .Values.metrics.port }}
+          protocol: TCP
+        {{- end }}
         {{- if .Values.livenessProbe }}
         livenessProbe:
           {{- toYaml .Values.livenessProbe | nindent 12 }}
@@ -50,11 +55,46 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
-        {{- if or .Values.nodeOptions.maxOldSpaceSizeMiB .Values.env .Values.extraEnv .Values.commonServiceApiKey.secretName }}
+        {{- if or .Values.nodeOptions.maxOldSpaceSizeMiB .Values.env .Values.extraEnv .Values.commonServiceApiKey.secretName .Values.otel.enabled .Values.metrics.enabled }}
         env:
           {{- if .Values.nodeOptions.maxOldSpaceSizeMiB }}
             - name: NODE_OPTIONS
               value: "--max-old-space-size={{ .Values.nodeOptions.maxOldSpaceSizeMiB }}"
+          {{- end }}
+          {{- if .Values.metrics.enabled }}
+            - name: METRICS_ENABLED
+              value: "true"
+            - name: METRICS_PORT
+              value: "{{ .Values.metrics.port }}"
+            - name: METRICS_PATH
+              value: {{ .Values.metrics.path | quote }}
+          {{- end }}
+          {{- if .Values.otel.enabled }}
+            # Keep the runtime flag aligned with the build-time browser flag.
+            - name: NEXT_PUBLIC_OTEL_ENABLED
+              value: "true"
+            - name: OTLP_COLLECTOR_URL
+              value: {{ .Values.otel.collectorUrl | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ .Values.otel.serviceName | quote }}
+            - name: OTEL_DEPLOYMENT_ENVIRONMENT
+              value: {{ .Values.otel.environment | quote }}
+            - name: OTEL_TENANT
+              value: {{ .Values.otel.tenant | quote }}
+            {{- if .Values.otelExternalSecret.enabled }}
+            # optional: telemetry must never gate startup. Without this the
+            # kubelet refuses to create the container until the Secret exists,
+            # so an unsynced ExternalSecret (missing Parameter Store entry,
+            # external-secrets down, IAM denial) holds the pod in
+            # CreateContainerConfigError indefinitely. Unset, the proxy simply
+            # forwards without an Authorization header.
+            - name: OTEL_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.otelExternalSecret.secretName }}
+                  key: api-key
+                  optional: true
+            {{- end }}
           {{- end }}
           {{- with .Values.env }}
           {{- toYaml . | nindent 12 }}

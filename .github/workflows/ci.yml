@@ -43,6 +43,10 @@ jobs:
     with:
       node_version: ${{ needs.extract-node-version.outputs.node_version }}
       platforms: linux/amd64,linux/arm64
+      # NEXT_PUBLIC_OTEL_ENABLED is inlined into the client bundle at build
+      # time, so the browser SDK has to be compiled in here. The Helm flag
+      # alone would only enable the server half.
+      otel_enabled: true
     secrets: inherit
 
   security-scan:
@@ -57,17 +61,17 @@ jobs:
       image_tag: ${{ needs.docker.outputs.image_tag }}
     secrets: inherit
 
-  deploy-production:
-    name: Deploy to Production
+  deploy-development:
+    name: Deploy to Development
     needs: [docker, security-scan]
     permissions:
       contents: read
       packages: read
       deployments: write
       id-token: write
-    uses: ./.github/workflows/production-deploy.yml
+    uses: ./.github/workflows/dev-deploy.yml
     with:
-      image_tag: ${{ needs.docker.outputs.image_tag }}
-      registry: ghcr.io
-      namespace: sample-services
-    secrets: inherit
+      # Full immutable ref, so the deploy can never resolve to a floating tag.
+      image_tag: ghcr.io/${{ needs.docker.outputs.image_name }}:${{ needs.docker.outputs.image_tag }}
+    secrets:
+      AWS_DEV_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEV_DEPLOY_ROLE_ARN }}
