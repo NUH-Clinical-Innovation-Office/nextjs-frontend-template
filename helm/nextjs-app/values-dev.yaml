@@ -59,14 +59,13 @@ env:
 
   # Cluster-internal address of common-service. A Kubernetes DNS name, not a
   # secret. The common-service-sample repository deploys its chart under the
-  # release name `common-service` (see its production-deploy.yml), and with no
-  # nameOverride the Service is therefore named `common-service` and listens on
-  # 8080. It has no ingress, so this is the only way to reach it. The fully
-  # qualified name is used so it stays correct if either release moves.
+  # release name `common-service` with fullnameOverride: common-service, so the
+  # Service is named `common-service` and listens on 8080. It has no ingress,
+  # so this is the only way to reach it. The fully qualified name is used so it
+  # stays correct if either release moves.
   #
-  # This assumes common-service is deployed into eai-otherapps alongside this
-  # app; it currently targets sample-services, so its own pipeline must move
-  # before this address resolves. Override via extraEnv in the meantime.
+  # common-service now deploys into eai-otherapps alongside this app, so this
+  # address resolves. The NetworkPolicy below must permit the same call.
   - name: COMMON_SERVICE_URL
     value: "http://common-service.eai-otherapps.svc.cluster.local:8080"
 
@@ -164,6 +163,36 @@ metrics:
     interval: 30s
     scrapeTimeout: 10s
     labels: {}
+
+# AWS VPC CNI NetworkPolicy. Egress is restricted to the two destinations this
+# app actually needs — common-service and the collector — plus DNS.
+#
+# The application port is deliberately left open to any source: the ALB targets
+# pod IPs directly (target-type: ip) from outside the cluster, and this is a
+# public site, so port 3000 is reachable from the internet by design. The
+# metrics port is not: it is admitted only from the monitoring namespace.
+networkPolicy:
+  enabled: true
+  commonServiceEgress:
+    enabled: true
+    # common-service deploys into this same namespace, so a bare podSelector
+    # already scopes correctly. Its chart sets nameOverride:
+    # common-service-sample, and that release's own ingress rule admits
+    # `client-sample` in return — both labels must stay in step or the call
+    # is denied at L3/L4 with no application-level error.
+    namespace: ""
+    podLabelName: common-service-sample
+    port: 8080
+  otelCollector:
+    namespace: nuh-cio
+    # Matches otel.collectorUrl above: this app's dedicated receiver, not the
+    # shared 4317 backend port.
+    port: 4322
+    podSelector:
+      app.kubernetes.io/name: opentelemetry-collector
+
+monitoring:
+  namespace: nuh-cio
 
 # Require the shared NUH CIO general-purpose EC2 nodes.
 affinity:

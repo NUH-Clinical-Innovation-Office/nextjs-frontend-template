@@ -124,6 +124,38 @@ metrics:
     scrapeTimeout: 10s
     labels: {}
 
+# Namespace running Prometheus, used by the metrics ingress rule.
+monitoring:
+  namespace: nuh-cio
+
+# AWS VPC CNI NetworkPolicy. Disabled by default so the chart stays usable on
+# clusters without a policy controller; deployed environments enable it.
+networkPolicy:
+  enabled: false
+  dns:
+    namespaceSelector:
+      kubernetes.io/metadata.name: kube-system
+    podSelector:
+      k8s-app: kube-dns
+  # Outbound to common-service, the Common Service this app calls.
+  commonServiceEgress:
+    enabled: true
+    # Empty namespace means "same namespace as this release".
+    namespace: ""
+    podLabelName: common-service-sample
+    port: 8080
+  otelCollector:
+    namespace: nuh-cio
+    # This app proxies browser telemetry over OTLP/HTTP, which the collector
+    # exposes on a per-proxy authenticated port rather than the shared 4317.
+    # Must match otel.collectorUrl, or exports are dropped at L3/L4 with no
+    # application-level error.
+    port: 4322
+    podSelector:
+      app.kubernetes.io/name: opentelemetry-collector
+  additionalIngress: []
+  additionalEgress: []
+
 livenessProbe:
   httpGet:
     path: /
