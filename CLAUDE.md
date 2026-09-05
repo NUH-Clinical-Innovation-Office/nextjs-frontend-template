@@ -6,6 +6,29 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a Next.js 16 frontend template with TypeScript, Tailwind CSS 4, and comprehensive CI/CD infrastructure. It's designed for production deployment to Kubernetes with automated feature branch previews via Cloudflare Tunnel.
 
+## Runtime
+
+Bun is both the package manager and the JavaScript runtime. There is no Node.js
+in the production image.
+
+- The `dev`, `build`, and `start` scripts are prefixed with `bun --bun` so the
+  Next.js CLI executes on Bun rather than Node. Dropping that flag silently
+  falls back to Node, which is why the prefix must stay on any new script that
+  invokes `next`.
+- The Docker image is based on `oven/bun:<version>-alpine` and starts the
+  standalone build with `bun server.js`.
+- Runtime tuning uses `BUN_OPTIONS=--smol` (set by the Helm chart via
+  `bunOptions.smol`). V8 flags such as `NODE_OPTIONS=--max-old-space-size` do
+  nothing on Bun, since it runs JavaScriptCore.
+- `packageManager` in `package.json` is the single source of truth for the Bun
+  version; CI parses it and passes it as the `BUN_VERSION` Docker build arg.
+- Bun 1.4.0 is a hard floor, not a preference. Bun 1.3.14 segfaults during
+  `next build` (exit 139, then `SIGILL`) because of a napi threadsafe-function
+  use-after-free in the next-swc/Turbopack bindings — see
+  [oven-sh/bun#36866](https://github.com/oven-sh/bun/issues/36866), fixed after
+  1.3.14 was cut. The crash only reproduces on a real app, so a downgrade will
+  look fine locally and fail in CI.
+
 ## Essential Commands
 
 ### Development
@@ -132,7 +155,7 @@ bun run knip          # Check for unused dependencies
 
 - Strict mode enabled
 - Path alias: `@/*` → `src/*`
-- Node version: 26.8.1
+- Bun version: 1.4.0 (`packageManager` in `package.json` is the single source of truth; CI parses it)
 
 ### Testing (bun test)
 
@@ -179,3 +202,13 @@ Extensive setup guides available in `docs/`:
 - Pre-commit hooks will block commits if linting fails
 - Feature deployments require all Cloudflare and Kubernetes secrets configured
 - Port range for feature branches is limited (31000-32000) - cleanup unused branches
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

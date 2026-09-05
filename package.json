@@ -2,21 +2,21 @@
   "name": "nextjs-frontend-template",
   "version": "0.1.0",
   "private": true,
-  "packageManager": "bun@1.3.14",
+  "packageManager": "bun@1.4.0",
   "engines": {
-    "node": "26.8.1"
+    "bun": ">=1.4.0"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
-    "start": "next start",
+    "dev": "bun --bun next dev --turbopack",
+    "build": "bun --bun next build --turbopack",
+    "start": "bun --bun next start",
     "test": "bun test",
     "test:watch": "bun test --watch",
     "test:coverage": "bun test --coverage",
     "lint": "biome check",
     "format": "biome check --write",
     "type-check": "tsc --noEmit",
-    "analyze": "ANALYZE=true next build --webpack",
+    "analyze": "ANALYZE=true bun --bun next build --webpack",
     "security-scan": "echo '=== Running Trivy Security Scans ===' && echo '\n[1/3] Scanning dependencies and configurations...' && trivy fs . --severity CRITICAL --scanners vuln,misconfig --skip-dirs docs && echo '\n[2/3] Scanning Dockerfile...' && trivy config Dockerfile --severity CRITICAL && echo '\n[3/3] Scanning Helm charts...' && trivy config helm/ --severity CRITICAL && echo '\n✓ Security scan complete!'",
     "security-scan:image": "echo 'Building and scanning Docker image...' && IMAGE_TAG=$(git rev-parse --short HEAD) && docker build -t nextjs-frontend-template:$IMAGE_TAG . && trivy image nextjs-frontend-template:$IMAGE_TAG --severity CRITICAL",
     "prepare": "husky",

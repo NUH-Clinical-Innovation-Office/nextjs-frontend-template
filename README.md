@@ -40,13 +40,12 @@ Key differentiators:
 
 ## Prerequisites
 
-- **Node.js** >= 26.8.1
-- **npm** (or yarn, pnpm, bun)
+- **Bun** >= 1.4.0 — used as both the package manager and the JavaScript runtime
 - **Trivy** (optional, for security scanning) — [Installation Guide](https://aquasecurity.github.io/trivy/latest/getting-started/installation/)
 - **Docker** (optional, for containerized builds)
 - **kubectl** and **Helm** (optional, for Kubernetes deployment)
 
-Follow the full setup guide at [NUH Clinical Innovation Office Setup](https://github.com/NUH-Clinical-Innovation-Office/setup) to install Node.js and configure your environment.
+Follow the full setup guide at [NUH Clinical Innovation Office Setup](https://github.com/NUH-Clinical-Innovation-Office/setup) to install Bun and configure your environment.
 
 ## Installation
 

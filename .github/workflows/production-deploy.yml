@@ -7,8 +7,8 @@ on:
         description: "Docker image tag to deploy"
         required: true
         type: string
-      node_version:
-        description: "Node.js version to use"
+      bun_version:
+        description: "Bun version to use"
         required: false
         type: string
 
