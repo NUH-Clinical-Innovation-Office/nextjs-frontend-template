@@ -132,7 +132,7 @@ bun run knip          # Check for unused dependencies
 
 - Strict mode enabled
 - Path alias: `@/*` → `src/*`
-- Node version: 26.3.0
+- Node version: 26.8.1
 
 ### Testing (bun test)
 
