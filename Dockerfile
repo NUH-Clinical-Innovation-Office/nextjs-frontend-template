@@ -1,7 +1,7 @@
 # Stage 1: Builder
 # BUN_VERSION is extracted from package.json (packageManager) by CI. The default
 # keeps a bare `docker build` working and must be kept in sync with package.json.
-ARG BUN_VERSION=1.4.0
+ARG BUN_VERSION=1.4.2
 
 FROM oven/bun:${BUN_VERSION}-alpine AS builder
 WORKDIR /app
