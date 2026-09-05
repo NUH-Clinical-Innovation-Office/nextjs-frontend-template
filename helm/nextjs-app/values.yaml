@@ -67,15 +67,15 @@ resources:
     cpu: 250m
     memory: 256Mi
 
-# Node.js runtime tuning.
-# Node has no JVM-style heap flag; cap the V8 old-space via NODE_OPTIONS so the
-# heap stays well under the container memory limit (avoids OOMKills before GC
-# kicks in). Set to ~75% of resources.limits.memory.
-# Default kept at 192 MiB so it never exceeds a real environment (production runs
-# a 256Mi limit -> 192). Override per-environment to track that environment's
-# memory limit; environments with more memory can raise this.
-nodeOptions:
-  maxOldSpaceSizeMiB: 192
+# Bun runtime tuning.
+# Bun runs on JavaScriptCore, which ignores V8 flags such as
+# `--max-old-space-size`. Use `--smol` instead: it makes the GC run more
+# eagerly and keeps the heap small, which is what we want under the tight
+# container memory limits (256Mi) this chart ships by default.
+# Disable it in memory-rich environments where throughput matters more than
+# resident size.
+bunOptions:
+  smol: true
 
 # Prometheus metrics exposure.
 # App serves metrics on a dedicated port (not via ingress). Discovery is via a

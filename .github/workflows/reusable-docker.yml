@@ -3,8 +3,8 @@ name: Reusable Docker Build & Push
 on:
   workflow_call:
     inputs:
-      node_version:
-        description: "Node.js version to use (extracted from package.json by caller)"
+      bun_version:
+        description: "Bun version to use (extracted from package.json by caller)"
         required: false
         type: string
       registry:
@@ -107,7 +107,9 @@ jobs:
 
       - name: Extract version from package.json
         id: package-version
-        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        run: |
+          VERSION=$(grep -m1 -o '"version": *"[^"]*"' package.json | sed 's/.*: *"//;s/"//')
+          echo "VERSION=${VERSION}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
@@ -117,7 +119,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
-            NODE_VERSION=${{ inputs.node_version }}
+            BUN_VERSION=${{ inputs.bun_version }}
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             REVISION=${{ github.sha }}
             VERSION=${{ steps.package-version.outputs.VERSION }}

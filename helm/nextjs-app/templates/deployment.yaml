@@ -57,11 +57,11 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
-        {{- if or .Values.nodeOptions.maxOldSpaceSizeMiB .Values.metrics.enabled .Values.env }}
+        {{- if or .Values.bunOptions.smol .Values.metrics.enabled .Values.env }}
         env:
-          {{- if .Values.nodeOptions.maxOldSpaceSizeMiB }}
-            - name: NODE_OPTIONS
-              value: "--max-old-space-size={{ .Values.nodeOptions.maxOldSpaceSizeMiB }}"
+          {{- if .Values.bunOptions.smol }}
+            - name: BUN_OPTIONS
+              value: "--smol"
           {{- end }}
           {{- if .Values.metrics.enabled }}
             - name: METRICS_PORT

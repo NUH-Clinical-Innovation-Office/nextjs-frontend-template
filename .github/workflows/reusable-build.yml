@@ -3,8 +3,8 @@ name: Reusable Build Workflow
 on:
   workflow_call:
     inputs:
-      node_version:
-        description: "Node.js version to use (extracted from package.json by caller)"
+      bun_version:
+        description: "Bun version to use (extracted from package.json by caller)"
         required: false
         type: string
     outputs:
@@ -18,28 +18,25 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
-      cache_hit: ${{ steps.cache-node-modules.outputs.cache-hit }}
+      cache_hit: ${{ steps.cache-deps.outputs.cache-hit }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun_version }}
 
       - name: Cache node_modules
-        id: cache-node-modules
+        id: cache-deps
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Install dependencies
-        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
 
   lint:
@@ -51,19 +48,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun_version }}
 
       - name: Restore node_modules cache
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Run lint
         run: bun run lint
@@ -77,19 +71,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun_version }}
 
       - name: Restore node_modules cache
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Run tests
         run: bun run test
@@ -103,19 +94,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ inputs.node_version }}
-
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun_version }}
 
       - name: Restore node_modules cache
         uses: actions/cache@v5
         with:
           path: node_modules
-          key: node-modules-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          key: bun-deps-${{ runner.os }}-${{ hashFiles('bun.lock') }}
 
       - name: Run knip
         run: bun run knip

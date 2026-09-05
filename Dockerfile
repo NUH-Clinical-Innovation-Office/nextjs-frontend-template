@@ -1,12 +1,10 @@
 # Stage 1: Builder
-# NODE_VERSION is extracted from package.json at build time
-ARG NODE_VERSION
+# BUN_VERSION is extracted from package.json (packageManager) by CI. The default
+# keeps a bare `docker build` working and must be kept in sync with package.json.
+ARG BUN_VERSION=1.3.14
 
-FROM node:${NODE_VERSION}-alpine AS builder
+FROM oven/bun:${BUN_VERSION}-alpine AS builder
 WORKDIR /app
-
-# Install bun
-RUN npm install -g bun@latest
 
 # Install all dependencies including dev dependencies for build
 COPY package.json bun.lock ./
@@ -15,13 +13,15 @@ RUN bun install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the application
+# Build the application with the Bun runtime
 RUN bun run build
 
 # Stage 2: Runner
-FROM node:${NODE_VERSION}-alpine AS runner
+FROM oven/bun:${BUN_VERSION}-alpine AS runner
 
-# Metadata arguments
+# Metadata arguments. BUN_VERSION is redeclared because an ARG set before the
+# first FROM goes out of scope inside a build stage.
+ARG BUN_VERSION
 ARG BUILD_DATE
 ARG REVISION
 ARG VERSION
@@ -34,16 +34,17 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${REVISION}" \
       org.opencontainers.image.title="Next.js Frontend Template" \
       org.opencontainers.image.description="Production-ready Next.js application" \
-      org.opencontainers.image.base.name="node:${NODE_VERSION}-alpine"
+      org.opencontainers.image.base.name="oven/bun:${BUN_VERSION}-alpine"
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create a non-root user
+# Create a non-root user. The oven/bun image ships a `bun` user at UID 1000, so
+# use explicit IDs matching the Helm securityContext (runAsUser: 1001).
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nextjs
+    adduser --system --uid 1001 --ingroup nodejs nextjs
 
 # Copy necessary files from builder
 COPY --from=builder /app/public ./public
@@ -57,5 +58,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Start the application
-CMD ["node", "server.js"]
+# Start the standalone server on the Bun runtime
+CMD ["bun", "server.js"]
