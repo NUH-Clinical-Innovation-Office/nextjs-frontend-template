@@ -22,6 +22,12 @@ in the production image.
   nothing on Bun, since it runs JavaScriptCore.
 - `packageManager` in `package.json` is the single source of truth for the Bun
   version; CI parses it and passes it as the `BUN_VERSION` Docker build arg.
+- Bun 1.4.0 is a hard floor, not a preference. Bun 1.3.14 segfaults during
+  `next build` (exit 139, then `SIGILL`) because of a napi threadsafe-function
+  use-after-free in the next-swc/Turbopack bindings — see
+  [oven-sh/bun#36866](https://github.com/oven-sh/bun/issues/36866), fixed after
+  1.3.14 was cut. The crash only reproduces on a real app, so a downgrade will
+  look fine locally and fail in CI.
 
 ## Essential Commands
 
@@ -149,7 +155,7 @@ bun run knip          # Check for unused dependencies
 
 - Strict mode enabled
 - Path alias: `@/*` → `src/*`
-- Bun version: 1.3.14 (`packageManager` in `package.json` is the single source of truth; CI parses it)
+- Bun version: 1.4.0 (`packageManager` in `package.json` is the single source of truth; CI parses it)
 
 ### Testing (bun test)
 

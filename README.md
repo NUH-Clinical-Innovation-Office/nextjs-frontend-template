@@ -40,7 +40,7 @@ Key differentiators:
 
 ## Prerequisites
 
-- **Bun** >= 1.3.14 — used as both the package manager and the JavaScript runtime
+- **Bun** >= 1.4.0 — used as both the package manager and the JavaScript runtime
 - **Trivy** (optional, for security scanning) — [Installation Guide](https://aquasecurity.github.io/trivy/latest/getting-started/installation/)
 - **Docker** (optional, for containerized builds)
 - **kubectl** and **Helm** (optional, for Kubernetes deployment)
