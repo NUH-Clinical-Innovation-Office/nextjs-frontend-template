@@ -916,7 +916,7 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Set up Helm
-        uses: azure/setup-helm@v3
+        uses: azure/setup-helm@v5
         with:
           version: '3.13.0'
 
