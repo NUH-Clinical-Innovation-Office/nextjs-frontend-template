@@ -5,6 +5,7 @@ services:
       dockerfile: Dockerfile
       args:
         BUN_VERSION: 1.4.2
+        DHI_BUN_TAG: 1.4
         BUILD_DATE: ${BUILD_DATE:-}
         VCS_REF: ${VCS_REF:-}
         VERSION: ${VERSION:-0.1.0}

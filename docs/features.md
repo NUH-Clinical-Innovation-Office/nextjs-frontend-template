@@ -54,7 +54,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | Per-request nonce-based CSP | stable | Fresh base64 nonce per request, attached via `x-nonce` and embedded in `script-src` / `style-src` (no `unsafe-inline` / `unsafe-eval` in production; dev adds `'unsafe-eval'` to scripts and `'unsafe-inline'` to styles for Turbopack HMR) |
 | Runtime env resolution in CSP | stable | `src/proxy.ts` reads `process.env.API_URL` so Kubernetes-injected values flow into `connect-src` without rebuilding the image |
 | Trivy security scanning | stable | Scans deps, Dockerfile, and Helm charts in CI |
-| Non-root Docker containers | stable | Runs as UID 1001 in Dockerfile and Helm values |
+| Non-root Docker containers | stable | Runs as UID 65532 in Dockerfile and Helm values |
 | Read-only root filesystem | stable | K8s security context enforces read-only root |
 | Vault Agent Injector for secrets | stable | HashiCorp Vault annotations in Helm values |
 | Zod runtime env validation | stable | Type-safe environment variable parsing |
