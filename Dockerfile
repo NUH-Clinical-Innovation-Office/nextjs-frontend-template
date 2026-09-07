@@ -1,9 +1,11 @@
 # Stage 1: Builder
-# BUN_VERSION is extracted from package.json (packageManager) by CI. The default
-# keeps a bare `docker build` working and must be kept in sync with package.json.
+# BUN_VERSION is extracted from package.json (packageManager) by CI and remains
+# a supported build argument. DHI publishes Bun 1.4 under the series tag below
+# rather than the repository's exact package-manager patch version.
 ARG BUN_VERSION=1.4.2
+ARG DHI_BUN_TAG=1.4
 
-FROM oven/bun:${BUN_VERSION}-alpine AS builder
+FROM dhi.io/bun:${DHI_BUN_TAG}-debian-dev AS builder
 WORKDIR /app
 
 # Install all dependencies including dev dependencies for build
@@ -17,11 +19,12 @@ COPY . .
 RUN bun run build
 
 # Stage 2: Runner
-FROM oven/bun:${BUN_VERSION}-alpine AS runner
+FROM dhi.io/bun:${DHI_BUN_TAG}-debian AS runner
 
 # Metadata arguments. BUN_VERSION is redeclared because an ARG set before the
 # first FROM goes out of scope inside a build stage.
 ARG BUN_VERSION
+ARG DHI_BUN_TAG
 ARG BUILD_DATE
 ARG REVISION
 ARG VERSION
@@ -34,24 +37,21 @@ LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.revision="${REVISION}" \
       org.opencontainers.image.title="Next.js Frontend Template" \
       org.opencontainers.image.description="Production-ready Next.js application" \
-      org.opencontainers.image.base.name="oven/bun:${BUN_VERSION}-alpine"
+      org.opencontainers.image.base.name="dhi.io/bun:${DHI_BUN_TAG}-debian"
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Create a non-root user. The oven/bun image ships a `bun` user at UID 1000, so
-# use explicit IDs matching the Helm securityContext (runAsUser: 1001).
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --ingroup nodejs nextjs
-
 # Copy necessary files from builder
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=65532:65532 /app/public ./public
+COPY --from=builder --chown=65532:65532 /app/.next/standalone ./
+COPY --from=builder --chown=65532:65532 /app/.next/static ./.next/static
 
-USER nextjs
+# DHI runtime images run as the nonroot user (UID 65532) and intentionally do
+# not include a shell or package manager.
+USER 65532:65532
 
 EXPOSE 3000
 

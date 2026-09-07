@@ -15,13 +15,19 @@ in the production image.
   Next.js CLI executes on Bun rather than Node. Dropping that flag silently
   falls back to Node, which is why the prefix must stay on any new script that
   invokes `next`.
-- The Docker image is based on `oven/bun:<version>-alpine` and starts the
-  standalone build with `bun server.js`.
+- The Docker build uses `dhi.io/bun:1.4-debian-dev` for builds and
+  `dhi.io/bun:1.4-debian` for the non-root runtime, which starts the standalone
+  build with `bun server.js`.
+- DHI runtime images run as UID 65532 and do not include a shell or package
+  manager. The Dockerfile therefore uses the DHI `-dev` variant for build steps
+  and numeric ownership for copied artifacts.
 - Runtime tuning uses `BUN_OPTIONS=--smol` (set by the Helm chart via
   `bunOptions.smol`). V8 flags such as `NODE_OPTIONS=--max-old-space-size` do
   nothing on Bun, since it runs JavaScriptCore.
-- `packageManager` in `package.json` is the single source of truth for the Bun
-  version; CI parses it and passes it as the `BUN_VERSION` Docker build arg.
+- `packageManager` in `package.json` is the single source of truth for the
+  local Bun version; CI parses it and passes it as the `BUN_VERSION` Docker
+  build arg and derives the compatible `DHI_BUN_TAG` series tag because DHI
+  does not publish every upstream patch version.
 - Bun 1.4.0 is a hard floor, not a preference (the repo currently pins 1.4.2).
   Bun 1.3.14 segfaults during
   `next build` (exit 139, then `SIGILL`) because of a napi threadsafe-function
@@ -115,7 +121,7 @@ bun run knip          # Check for unused dependencies
   - `values-staging.yaml`: Staging environment
   - `values-production.yaml`: Production environment
 - Kubernetes resources: Deployment, Service (NodePort), ServiceAccount, HPA, Ingress
-- Security contexts configured with non-root user (UID 1001)
+- Security contexts configured with the DHI non-root user (UID 65532)
 
 ### Secrets Management
 

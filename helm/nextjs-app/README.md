@@ -162,7 +162,7 @@ All probes are configured to check the root path (`/`) on port 3000.
 
 The chart follows security best practices:
 
-- Runs as non-root user (uid: 1001)
+- Runs as DHI's non-root user (uid: 65532)
 - Drops all capabilities
 - Disables privilege escalation
 - Creates dedicated service account
