@@ -7,10 +7,8 @@ interface ExternalLinkProps extends Omit<ComponentPropsWithoutRef<typeof Link>, 
   className?: string;
 }
 
-/**
- * A wrapper component for external links that automatically adds
- * security and accessibility best practices (target="_blank" and rel="noopener noreferrer")
- */
+// target and rel are fixed rather than overridable, so a caller cannot open an
+// external link without noopener and leak window.opener to the target page.
 export function ExternalLink({ href, children, className, ...props }: ExternalLinkProps) {
   return (
     <Link href={href} target="_blank" rel="noopener noreferrer" className={className} {...props}>
