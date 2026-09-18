@@ -74,6 +74,8 @@ bun run check:all       # All three, and what the pre-commit hook runs
   knip. A failure in any of them blocks the commit.
 - **Commit-msg**: enforces [Conventional Commits](https://www.conventionalcommits.org/)
   through `commitlint.config.ts`.
+- **Pre-push**: runs `bun run test`. The suite takes a few seconds, so it runs
+  on push rather than on every commit.
 
 ### Commit Messages
 
