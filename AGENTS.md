@@ -65,14 +65,40 @@ bun run lint            # Check with Biome
 bun run format          # Format with Biome
 bun run type-check      # TypeScript type checking
 bun run knip            # Find unused dependencies
+bun run check:all       # All three, and what the pre-commit hook runs
 ```
 
 ## Git Hooks (via Husky)
 
-- **Pre-commit**: runs `bun run lint`. Lint failures block the commit.
-- **Commit-msg**: enforces [Conventional Commits](https://www.conventionalcommits.org/).
-  Valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
-  `build`, `ci`, `chore`, `revert`. Example: `feat: add user authentication`.
+- **Pre-commit**: runs `bun run check:all`, which covers lint, type-check, and
+  knip. A failure in any of them blocks the commit.
+- **Commit-msg**: enforces [Conventional Commits](https://www.conventionalcommits.org/)
+  through `commitlint.config.ts`.
+
+### Commit Messages
+
+Valid types are `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
+`build`, `ci`, `chore`, and `revert`.
+
+```
+feat: add user authentication
+fix: resolve navigation bug on mobile
+```
+
+The rules below are enforced, so a message that breaks one is rejected.
+
+- The subject is entirely lower-case. This catches file and tool names, so
+  write "adopt agents.md convention" rather than "adopt AGENTS.md convention".
+  Move the capitalised name into the body, where no case rule applies.
+- The subject has no trailing full stop.
+- The header fits in 100 characters.
+- A blank line separates the subject from the body, and the body from the
+  footer.
+- Body and footer lines fit in 100 characters.
+
+Explain why in the body when the reason is not obvious from the diff. The
+subject says what changed, the body says what it fixes or why the previous
+approach fell short.
 
 ## Architecture
 
