@@ -5,6 +5,8 @@
  * kube-prometheus-stack ServiceMonitor can scrape /metrics without
  * touching the public Next.js port (3000).
  */
+import { env } from '@/lib/env';
+
 export const register = async () => {
   // Only start the metrics server in the Node.js runtime. The edge runtime
   // (middleware) never imports this file, but the guard makes intent explicit
@@ -14,16 +16,17 @@ export const register = async () => {
   // Dynamic import keeps prom-client + node:http out of the edge bundle.
   const { createMetricsServer } = await import('@/lib/metrics-server');
 
-  const port = Number.parseInt(process.env.METRICS_PORT ?? '9464', 10);
-  const path = process.env.METRICS_PATH ?? '/metrics';
-  const { listen } = createMetricsServer({ port, path });
+  const { listen } = createMetricsServer({
+    port: env.METRICS_PORT,
+    path: env.METRICS_PATH,
+  });
 
   try {
     const handle = await listen();
     // eslint-disable-next-line no-console -- intentional startup signal
-    console.log(`[metrics] listening on :${handle.port}${path}`);
+    console.log(`[metrics] listening on :${handle.port}${env.METRICS_PATH}`);
   } catch (err) {
     // eslint-disable-next-line no-console -- intentional startup failure signal
-    console.error(`[metrics] failed to bind :${port}:`, (err as Error).message);
+    console.error(`[metrics] failed to bind :${env.METRICS_PORT}:`, (err as Error).message);
   }
 };
