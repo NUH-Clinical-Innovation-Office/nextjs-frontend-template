@@ -54,8 +54,9 @@ Components in `components/ui/` are generated but then **owned by this repo**.
 Edit them directly rather than wrapping them to work around a style. They use
 Radix primitives and `class-variance-authority` for variants.
 
-Currently installed: `Button`, `Card` (with `CardHeader`/`CardTitle`/
-`CardDescription`/`CardContent`), `Badge`, `Switch`.
+List `components/ui/` to see what is installed. Check there before running
+`bunx shadcn@latest add <name>`, because re-adding a component that is already
+present overwrites the local edits that made it ours.
 
 Browse the catalogue at <https://ui.shadcn.com/docs/components>. Repo-specific
 shadcn rules live in `.agents/skills/shadcn/`.
