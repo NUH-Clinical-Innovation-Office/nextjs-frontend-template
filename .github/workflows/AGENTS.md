@@ -1,8 +1,8 @@
 # .github/workflows/AGENTS.md
 
-Two entry workflows (`ci.yml`, `pull-request.yml`) plus scheduled and manual
-ones. Everything else is a reusable workflow called by them. Edit the reusable
-file to change behaviour for all callers at once.
+One entry workflow, `ci.yml`, plus scheduled and manual ones. Everything else
+is a reusable workflow called by it. Edit the reusable file to change behaviour
+for all callers at once.
 
 ## Call Graph
 
@@ -17,12 +17,6 @@ ci.yml                    (on: push, all branches)
     ├── staging-deploy.yml        if ref == main
     └── production-deploy.yml     if ref == main, needs deploy-staging
 
-pull-request.yml          (on: pull_request → main)
-├── extract-bun-version
-├── reusable-build.yml
-├── secret-scan.yml
-└── reusable-docker.yml           build only, no deploy
-
 feature-cleanup.yml       (on: delete)         tears down a branch's namespace
 image-cleanup.yml         (cron: Sun 02:00 UTC, + manual)
 staging-rollback.yml      (manual / callable)
@@ -32,18 +26,21 @@ production-rollback.yml   (manual / callable)
 Production deploys run on merge to `main` and depend on `deploy-staging`
 succeeding first. Staging is a gate, not a parallel target.
 
-## Do Not Change: the `pull_request` Trigger
+## Adding a Pull Request Workflow
 
-`pull-request.yml` uses `pull_request`, deliberately. Fork PRs then run with no
-access to secrets and a read-only `GITHUB_TOKEN`. Switching to
-`pull_request_target` would execute PR-author-controlled code **with repository
-secrets in scope**, a full compromise path for any fork PR. This is also why
-`pull-request.yml` has no deploy job and references no deploy credentials.
+There is no PR-triggered workflow today. `ci.yml` runs on push, so branch
+pushes are covered but fork PRs are not.
+
+Any workflow added for pull requests uses the `pull_request` trigger. Fork PRs
+then run with no access to secrets and a read-only `GITHUB_TOKEN`.
+`pull_request_target` runs PR-author-controlled code **with repository secrets
+in scope**, which is a compromise path for any fork PR. A PR workflow also
+stays free of deploy jobs and deploy credentials for the same reason.
 
 ## Bun Version Flow
 
-`packageManager` in `package.json` is the single source of truth. Both entry
-workflows have an `extract-bun-version` job that greps it:
+`packageManager` in `package.json` is the single source of truth. `ci.yml`
+has an `extract-bun-version` job that greps it:
 
 ```bash
 BUN_VERSION=$(grep -o '"packageManager": *"bun@[^"]*"' package.json | sed 's/.*bun@//;s/"//')

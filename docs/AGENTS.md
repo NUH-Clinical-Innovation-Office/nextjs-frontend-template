@@ -17,15 +17,12 @@ files are the faster source.
 | `helm-kubernetes-setup.md` | Installing Helm and general chart workflow. For *this* chart's specifics, read `helm/AGENTS.md` first. | 38K |
 | `cloudflare-github-setup.md` | Configuring Cloudflare Tunnel and the GitHub Actions secrets. The reference for how preview URLs and DNS are wired. | 31K |
 | `vault-setup-and-deployment.md` | Setting up HashiCorp Vault, KV paths, and the Agent Injector that supplies runtime secrets. | 19K |
-| `aws-migration-plan.md` | Context on the proposed move from Cloudflare Tunnel + K3s to AWS EKS. | 23K |
 
 ## Status Caveats
 
-`aws-migration-plan.md` is marked **proposed, not started** and targets a single
-`development` environment on the NUHS dev EKS cluster, with no staging and no
-production. Treat it as intent, not as a description of the running system. The
-deployed architecture today is K3s plus Cloudflare Tunnel, per the workflows and
-Helm values.
+`kubernetes-setup-aws.md` describes a setup that is not deployed. The running
+architecture is K3s plus Cloudflare Tunnel, per the workflows and Helm values,
+so read the AWS guide as an option rather than a description of production.
 
 Where a guide and the actual manifests disagree, the manifests win.
 `helm/nextjs-app/values-*.yaml` and `.github/workflows/` are what runs.
