@@ -294,7 +294,7 @@ git commit -m "docs: update readme with setup instructions"
 - **Commitlint** for conventional commit messages
 - **Knip** for unused dependency and code detection
 - **@next/bundle-analyzer** for bundle size inspection
-- **Claude Code** integration with CLAUDE.md for AI-assisted development
+- **Coding agent** integration via AGENTS.md (Claude Code reads it through CLAUDE.md)
 
 ### Testing
 

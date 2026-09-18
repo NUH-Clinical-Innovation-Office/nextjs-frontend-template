@@ -36,7 +36,7 @@ Feature inventory for this Next.js frontend template. Codebase is the source of 
 | Commitlint for conventional commits | stable | Validates commit message format (feat, fix, docs, etc.) |
 | Knip for unused code detection | stable | Finds unused dependencies, exports, and files |
 | Bundle analyzer | stable | Visualize bundle size via @next/bundle-analyzer |
-| Claude Code integration | stable | CLAUDE.md with project context and commands |
+| Coding agent integration | stable | AGENTS.md at repo root and per-directory; CLAUDE.md imports it |
 
 ## Testing
 
