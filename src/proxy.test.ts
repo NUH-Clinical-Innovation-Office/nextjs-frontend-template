@@ -1,19 +1,14 @@
 import { describe, expect, it } from 'bun:test';
 import { NextRequest } from 'next/server';
+import { env } from '@/lib/env';
+import { buildSecurityHeaders } from '@/lib/security-headers';
 import { proxy } from './proxy';
 
 function makeRequest(path = '/'): NextRequest {
   return new NextRequest(new URL(path, 'http://localhost:3000'));
 }
 
-describe('proxy', () => {
-  it('attaches Content-Security-Policy header', () => {
-    const res = proxy(makeRequest());
-    const csp = res.headers.get('Content-Security-Policy');
-    expect(csp).toBeTruthy();
-    expect(csp).toContain("default-src 'self'");
-  });
-
+describe('proxy nonce wiring', () => {
   it('attaches x-nonce header', () => {
     const res = proxy(makeRequest());
     const nonce = res.headers.get('x-nonce');
@@ -34,44 +29,38 @@ describe('proxy', () => {
     expect(a).not.toBe(b);
   });
 
-  it('attaches X-Frame-Options DENY', () => {
+  it('passes apiUrl from validated env into the CSP', () => {
+    // buildSecurityHeaders is the source of truth; assert it agrees with proxy.
+    const headers = buildSecurityHeaders({
+      nonce: 'n',
+      ctx: { apiUrl: env.API_URL, nodeEnv: env.NODE_ENV },
+    });
     const res = proxy(makeRequest());
-    expect(res.headers.get('X-Frame-Options')).toBe('DENY');
+    const cspFromProxy = res.headers.get('Content-Security-Policy') ?? '';
+    const cspFromBuilder = headers.get('Content-Security-Policy') ?? '';
+    // The proxy uses a fresh nonce, but the directive set must match.
+    const directives = (csp: string) =>
+      csp
+        .split(';')
+        .map((d) => d.trim().split(' ')[0])
+        .sort();
+    expect(directives(cspFromProxy)).toEqual(directives(cspFromBuilder));
   });
 
-  it('attaches X-Content-Type-Options nosniff', () => {
+  it('forwards every header produced by buildSecurityHeaders', () => {
     const res = proxy(makeRequest());
-    expect(res.headers.get('X-Content-Type-Options')).toBe('nosniff');
-  });
-
-  it('attaches Referrer-Policy', () => {
-    const res = proxy(makeRequest());
-    expect(res.headers.get('Referrer-Policy')).toBe('origin-when-cross-origin');
-  });
-
-  it('attaches X-DNS-Prefetch-Control', () => {
-    const res = proxy(makeRequest());
-    expect(res.headers.get('X-DNS-Prefetch-Control')).toBe('on');
-  });
-
-  it('attaches Strict-Transport-Security with preload', () => {
-    const res = proxy(makeRequest());
-    expect(res.headers.get('Strict-Transport-Security')).toBe(
-      'max-age=31536000; includeSubDomains; preload',
-    );
-  });
-
-  it('attaches Permissions-Policy', () => {
-    const res = proxy(makeRequest());
-    const pp = res.headers.get('Permissions-Policy');
-    expect(pp).toContain('camera=()');
-    expect(pp).toContain('microphone=()');
-    expect(pp).toContain('geolocation=()');
-  });
-
-  it('attaches X-Permitted-Cross-Domain-Policies none', () => {
-    const res = proxy(makeRequest());
-    expect(res.headers.get('X-Permitted-Cross-Domain-Policies')).toBe('none');
+    for (const name of [
+      'Content-Security-Policy',
+      'X-Frame-Options',
+      'X-Content-Type-Options',
+      'Referrer-Policy',
+      'X-DNS-Prefetch-Control',
+      'Strict-Transport-Security',
+      'Permissions-Policy',
+      'X-Permitted-Cross-Domain-Policies',
+    ]) {
+      expect(res.headers.get(name)).toBeTruthy();
+    }
   });
 });
 

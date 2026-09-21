@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import './globals.css';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
-// Import env to validate environment variables on application startup
+// Side-effect import. Loading the module validates the environment at startup.
 import '@/lib/env';
 
 const geistSans = Geist({
