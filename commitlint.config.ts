@@ -31,7 +31,10 @@ const config: UserConfig = {
     'scope-case': [2, 'always', 'lower-case'],
 
     // Subject
-    'subject-case': [2, 'always', 'lower-case'],
+    // Disallow capitalising the first word, but allow capitals elsewhere so
+    // acronyms and proper nouns survive (CPU, HPA, Kubernetes, TypeScript).
+    // A flat 'lower-case' rule forces "cut idle cpu", which reads as a typo.
+    'subject-case': [2, 'never', ['sentence-case', 'start-case', 'pascal-case', 'upper-case']],
     'subject-empty': [2, 'never'],
     'subject-full-stop': [2, 'never', '.'],
 

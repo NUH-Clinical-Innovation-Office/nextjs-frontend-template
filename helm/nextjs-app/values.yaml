@@ -93,12 +93,29 @@ metrics:
     scrapeTimeout: 10s
     labels: {}             # extra labels if Prometheus needs a selector match
 
+# Autoscaling. CPU only, deliberately.
+#
+# Memory is left empty because it is not a usable load signal here. Bun runs on
+# JavaScriptCore, whose heap grows to fill the space available and is reclaimed
+# lazily, so resident memory ratchets upward and does not fall when load drops.
+# Since the HPA takes the *max* of all metric recommendations, a ratcheting
+# memory metric pins replicas at maxReplicas permanently and makes the CPU
+# target decorative. This is not hypothetical: the production HPA sat at 2/2
+# driven by memory (66%/80%) while CPU idled at 19%/60%.
+#
+# Memory exhaustion is handled by the container limit plus an OOM restart,
+# which is the correct response to a runaway heap -- adding a replica does not
+# relieve pressure on the pod that is already growing.
+#
+# If you do set targetMemoryUtilizationPercentage, raise resources.requests.memory
+# at the same time so the idle baseline is not already near the threshold
+# (at a 256Mi request, idle sits around 60-70%).
 autoscaling:
   enabled: false
-  minReplicas: 2
-  maxReplicas: 4
-  targetCPUUtilizationPercentage: 80
-  targetMemoryUtilizationPercentage: 80
+  minReplicas: 1
+  maxReplicas: 2
+  targetCPUUtilizationPercentage: 60
+  targetMemoryUtilizationPercentage: ""
 
 nodeSelector: {}
 
@@ -120,30 +137,37 @@ envFrom: []
   # - configMapRef:
   #     name: nextjs-config
 
-# Liveness probe configuration
+# Probe configuration.
+# All three probes target `/healthz`, a static route that renders nothing and
+# is excluded from the proxy matcher. They previously hit `/`, which is a
+# dynamic route: the home page is a client component, so it is absent from the
+# prerender manifest and every probe re-rendered the full page server-side.
+# Combined with a 5s readiness period across 2 replicas that was ~24 SSR
+# renders/minute/pod at idle, and measured ~10x the CPU of an equivalent app
+# serving prerendered HTML.
 livenessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   initialDelaySeconds: 30
-  periodSeconds: 10
+  periodSeconds: 20
   timeoutSeconds: 5
   failureThreshold: 3
 
 # Readiness probe configuration
 readinessProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   initialDelaySeconds: 10
-  periodSeconds: 5
+  periodSeconds: 15
   timeoutSeconds: 3
   failureThreshold: 3
 
 # Startup probe configuration (useful for slow-starting apps)
 startupProbe:
   httpGet:
-    path: /
+    path: /healthz
     port: 3000
   initialDelaySeconds: 0
   periodSeconds: 10
