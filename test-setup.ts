@@ -1,6 +1,10 @@
 import '@testing-library/jest-dom';
 import { afterEach, mock } from 'bun:test';
 import { cleanup } from '@testing-library/react';
+import { MotionGlobalConfig } from 'framer-motion';
+
+// Skip animation playback so happy-dom cancellation promises cannot outlive a test.
+MotionGlobalConfig.skipAnimations = true;
 
 // Cleanup after each test case
 afterEach(() => {
