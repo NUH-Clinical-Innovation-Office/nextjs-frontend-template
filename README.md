@@ -222,6 +222,8 @@ bun start                # Start production server
 bun run test             # Run tests once with bun test
 bun run test:watch       # Run tests in watch mode
 bun run test:coverage    # Generate coverage report (60% threshold)
+bun run e2e:install      # Install Chromium
+bun run e2e              # Test the production build on desktop and mobile
 ```
 
 ### Code Quality
@@ -432,7 +434,7 @@ Each feature branch gets automatic preview deployment:
 
 - Preview URL format: `https://{branch-name}-dev-{repo-name}.{domain}`
 - Deploys to separate Kubernetes namespace: `nextjs-{branch-name}`
-- Each deployment gets unique NodePort allocation (31000-32000 range)
+- Kubernetes allocates an available NodePort for each feature Service. CI reads it for Cloudflare.
 - Cloudflare Tunnel routes and DNS records are automatically created/updated
 - Cleanup automatically triggered when feature branch is deleted
 

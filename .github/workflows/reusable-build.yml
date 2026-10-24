@@ -10,7 +10,7 @@ on:
     outputs:
       cache_hit:
         description: "Whether build cache was hit"
-        value: ${{ jobs.build.outputs.cache_hit }}
+        value: ${{ jobs.setup.outputs.cache_hit }}
 
 jobs:
   setup:
@@ -84,6 +84,41 @@ jobs:
 
       - name: Run tests
         run: bun run test
+
+  e2e:
+    name: Browser Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: setup
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ inputs.bun_version }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Chromium
+        run: bun run e2e:install --with-deps
+
+      - name: Test production build on desktop and mobile
+        run: bun run e2e
+
+      - name: Upload browser failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-failures
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
 
   knip:
     name: Dependency Check
