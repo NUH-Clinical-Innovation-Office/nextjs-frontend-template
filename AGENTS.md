@@ -60,6 +60,8 @@ bun start               # Serve the production build
 bun run test            # Run tests once with bun test
 bun run test:watch      # Watch mode
 bun run test:coverage   # Coverage report
+bun run e2e:install     # Install Chromium for browser tests
+bun run e2e             # Test the production build on desktop and mobile
 
 bun run lint            # Check with Biome
 bun run format          # Format with Biome
@@ -146,6 +148,10 @@ Strict mode. Path alias `@/*` → `src/*`.
 - Module mocks use `vi.mock` (bun's Vitest-compatible alias). **Bun does not
   hoist mocks**, so a mocked module must be dynamically imported *after* the
   `vi.mock` call, or the real module gets bound first.
+- Browser tests use Playwright and `*.e2e.ts` filenames, keeping them separate
+  from `bun test`. Read `e2e/README.md` when adding or running browser tests.
+  Run `bun run e2e` after dependency or UI changes. The Playwright CLI uses Node
+  locally and in CI, while the app build and standalone server run on Bun.
 
 ## Docker
 
@@ -230,5 +236,5 @@ changes.
 - Copy `.env.example` to `.env.local` before running locally.
 - Feature deployments require the Cloudflare and Kubernetes secrets listed in
   `.github/workflows/AGENTS.md`.
-- The feature-branch NodePort range (31000 to 32000) is finite. Delete stale
-  branches so their ports are reclaimed.
+- Kubernetes allocates feature NodePorts from its configured range. Delete stale
+  branches so their Services and ports are reclaimed.

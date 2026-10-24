@@ -52,10 +52,9 @@ When adding a knob, add it to `values.yaml` first, then override as needed.
 | `podDisruptionBudget` | off | `maxUnavailable: 1` | `minAvailable: 1` |
 | Vault path | `.../development` | `.../staging` | `.../production` |
 
-Feature branches set `featureBranch.enabled: true` and get their NodePort from
-CI, not from the values file. The `nodePort: 30000` in `values-feature.yaml` is
-a placeholder that is always overridden. See `.github/workflows/AGENTS.md` for
-the allocation scheme.
+Feature branches set `featureBranch.enabled: true` and `service.nodePort: 0`.
+The template omits `nodePort`, allowing Kubernetes to allocate an available
+port. CI reads the live Service after deployment to configure Cloudflare.
 
 ## Things That Will Break If Changed Carelessly
 

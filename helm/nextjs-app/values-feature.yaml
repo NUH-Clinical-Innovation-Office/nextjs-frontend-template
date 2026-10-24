@@ -16,7 +16,7 @@ image:
 service:
   type: NodePort
   port: 3000
-  nodePort: 30000  # Will be overridden by CI
+  nodePort: 0  # Kubernetes allocates an available port
 
 serviceAccount:
   create: true

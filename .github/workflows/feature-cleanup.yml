@@ -67,21 +67,11 @@ jobs:
 
       - name: Determine branch name
         id: branch-name
+        env:
+          DELETED_REF: ${{ github.event.ref }}
         run: |
-          if [ "${{ github.event_name }}" == "delete" ]; then
-            BRANCH_NAME="${{ github.event.ref }}"
-          else
-            BRANCH_NAME="${{ github.event.pull_request.head.ref }}"
-          fi
-          SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
-          echo "SANITIZED=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
-
-      - name: Get allocated port
-        id: get-port
-        run: |
-          PORT=$(kubectl get configmap feature-branch-port-mappings -n ${{ env.PORT_MAPPING_NAMESPACE }} \
-            -o jsonpath="{.data.${{ steps.branch-name.outputs.SANITIZED }}}" 2>/dev/null || echo "")
-          echo "PORT=$PORT" >> $GITHUB_OUTPUT
+          SANITIZED_BRANCH=$(echo "$DELETED_REF" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
+          echo "SANITIZED=$SANITIZED_BRANCH" >> "$GITHUB_OUTPUT"
 
       - name: Delete Helm release
         run: |
@@ -112,7 +102,6 @@ jobs:
             -p "[{\"op\": \"remove\", \"path\": \"/data/${{ steps.branch-name.outputs.SANITIZED }}\"}]" || echo "Port mapping not found or already removed"
 
       - name: Remove Cloudflare Tunnel route
-        if: steps.get-port.outputs.PORT != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -167,7 +156,6 @@ jobs:
           fi
 
       - name: Remove Cloudflare DNS record
-        if: steps.get-port.outputs.PORT != ''
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}

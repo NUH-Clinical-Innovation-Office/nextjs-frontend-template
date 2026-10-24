@@ -66,16 +66,15 @@ Each non-`main` branch gets its own preview:
 - Namespace `nextjs-{sanitized-branch}`, release
   `nextjs-app-{sanitized-branch}`.
 - URL `https://{branch}-dev-{repo}.{CLOUDFLARE_DOMAIN}`.
-- A NodePort is allocated from **31000–32000** (`PORT_RANGE_START` /
-  `PORT_RANGE_END` in `feature-deploy.yml`) and recorded in the ConfigMap
-  `feature-branch-port-mappings` in the `default` namespace. The workflow reads
-  that ConfigMap to find a free port, so it is authoritative state living in
-  the cluster, not in git. Editing it by hand can strand or double-allocate
-  ports.
+- Kubernetes allocates and reserves an available NodePort from its configured
+  range. The feature values omit an explicit port (`nodePort: 0`). After Helm
+  installs the Service, the workflow reads its allocated port for Cloudflare.
+  The Service is the source of truth, so allocation cannot collide with another
+  repository's Service. Existing Services keep their ports on redeploy.
 - Cloudflare Tunnel routes and DNS records are created or updated per branch.
 - `feature-cleanup.yml` fires `on: delete` and releases the namespace, the
-  port mapping, and the DNS record. Deleting a branch in the UI is what
-  reclaims the port, and the range is small enough that stale branches matter.
+  DNS record. Deleting the Service releases its NodePort. Cleanup also removes
+  legacy ConfigMap entries left by the previous allocator.
 
 ## Required Secrets and Variables
 
