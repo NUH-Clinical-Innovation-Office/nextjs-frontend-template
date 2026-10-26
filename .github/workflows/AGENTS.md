@@ -63,18 +63,23 @@ Dockerfile take the version as an input, so it stays correct everywhere.
 
 Each non-`main` branch gets its own preview:
 
-- Namespace `nextjs-{sanitized-branch}`, release
-  `nextjs-app-{sanitized-branch}`.
-- URL `https://{branch}-dev-{repo}.{CLOUDFLARE_DOMAIN}`.
+- `.github/scripts/preview_identity.py` derives bounded namespace, release, and
+  hostname names from the full repository and branch. Deploy and cleanup call the
+  same helper so normalization and truncation cannot target another preview.
 - Kubernetes allocates and reserves an available NodePort from its configured
   range. The feature values omit an explicit port (`nodePort: 0`). After Helm
   installs the Service, the workflow reads its allocated port for Cloudflare.
   The Service is the source of truth, so allocation cannot collide with another
   repository's Service. Existing Services keep their ports on redeploy.
 - Cloudflare Tunnel routes and DNS records are created or updated per branch.
-- `feature-cleanup.yml` fires `on: delete` and releases the namespace, the
-  DNS record. Deleting the Service releases its NodePort. Cleanup also removes
-  legacy ConfigMap entries left by the previous allocator.
+- `feature-cleanup.yml` handles branch deletion and releases the namespace and
+  DNS record. Tag deletion is excluded. Deleting the Service releases its NodePort.
+- Deploy and cleanup share a per-preview concurrency group. All tunnel writers
+  use `.github/scripts/tunnel_route.py`, which locks a ConfigMap in `default`
+  across repositories sharing the cluster. Failed tunnel updates retain the lock.
+  See `docs/cloudflare-github-setup.md` for recovery and migration steps.
+- Staging and production take NodePorts from their Helm values. Tunnel routing
+  reads the live Service port after installation.
 
 ## Required Secrets and Variables
 

@@ -70,8 +70,10 @@ JavaScriptCore, so V8 flags like `NODE_OPTIONS=--max-old-space-size` are inert.
 Adding them has no effect.
 
 **Secrets come from Vault**, injected by the Vault Agent sidecar via
-`podAnnotations` (`vault.hashicorp.io/agent-inject-*`). Each environment reads
-its own KV path. Keep secret material out of `env:`, because those values land
+`podAnnotations` (`vault.hashicorp.com/agent-inject-*`). Each environment reads
+its own KV path. The runtime reads `/vault/secrets/env.json` before Next.js starts.
+`vaultSecrets.file` selects that file and makes a missing or invalid file fail startup.
+Keep secret material out of `env:`, because those values land
 in the rendered manifest in plain text. See `docs/vault-setup-and-deployment.md`.
 
 **ServiceMonitor is opt-in.** `metrics.serviceMonitor.enabled` requires the

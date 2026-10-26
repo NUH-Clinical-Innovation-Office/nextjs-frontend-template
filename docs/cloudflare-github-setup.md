@@ -791,6 +791,41 @@ kubectl get configmap feature-branch-port-mappings -n default -o json | jq '.dat
 
 ---
 
+### Preview names and migration
+
+Deploy and cleanup use `.github/scripts/preview_identity.py`. It derives namespace,
+release, and hostname names from the full repository name and the original branch
+name. A hash keeps names distinct after case conversion or truncation. The deploy
+job reports the resulting preview URL.
+
+Existing previews keep their old resources until they are removed. After updating
+the workflows, redeploy active branches to create previews under the new names.
+Verify ownership of each old Helm release, namespace, route, and DNS record before
+removing it. Old branch-only namespace names can be shared by multiple repositories,
+so the new cleanup workflow deliberately leaves them alone.
+
+### Concurrent tunnel updates and lock recovery
+
+Every tunnel update and removal runs through `.github/scripts/tunnel_route.py`.
+The helper creates a ConfigMap in `default` to lock the tunnel while reading and
+writing its configuration. It preserves other routes, origin settings, and the
+existing catch-all rule. The deployer needs ConfigMap create and delete permissions,
+which the supplied deployer ClusterRole already grants.
+
+Update every repository writing to the same tunnel to use this helper and the same
+cluster. GitHub concurrency groups alone cannot coordinate different repositories.
+Dashboard edits and other external writers also need coordination.
+
+A failed or interrupted update retains its lock because the remote write outcome
+may be uncertain. The workflow logs the lock name. Before recovering it, stop the
+owning run and confirm no request from that run can still complete. Inspect the
+current tunnel configuration, then remove that specific lock and rerun the job.
+
+```bash
+kubectl get configmap <lock-name-from-workflow> -n default -o yaml
+kubectl delete configmap <lock-name-from-workflow> -n default
+```
+
 ### Issue: Cloudflare tunnel not connecting
 
 **Symptom:** Tunnel status shows as "down" or "inactive"

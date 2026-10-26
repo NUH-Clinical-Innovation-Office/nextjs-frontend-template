@@ -15,13 +15,12 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  PRODUCTION_PORT: 30001
 
 jobs:
   deploy:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     environment:
       name: production
       url: https://${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}
@@ -113,8 +112,7 @@ jobs:
             --create-namespace \
             -f ./helm/nextjs-app/values-production.yaml \
             --set image.tag=${{ inputs.image_tag }} \
-            --set image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER} \
-            --set service.nodePort=${{ env.PRODUCTION_PORT }} \
+            --set "image.repository=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER}" \
             --wait \
             --timeout 10m
 
@@ -122,69 +120,27 @@ jobs:
         run: |
           kubectl rollout status deployment/nextjs-app -n ${{ github.event.repository.name }} --timeout=1m
 
+      - name: Read allocated service port
+        id: allocate-port
+        env:
+          APP_NAMESPACE: ${{ github.event.repository.name }}
+        run: |
+          PORT=$(kubectl get service nextjs-app -n "$APP_NAMESPACE" \
+            -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+          if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -eq 0 ]; then
+            echo "::error::The application Service has no allocated NodePort"
+            exit 1
+          fi
+          echo "PORT=$PORT" >> "$GITHUB_OUTPUT"
+
       - name: Create Cloudflare Tunnel route
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
-          CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
-          REPOSITORY_NAME: ${{ github.event.repository.name }}
-        run: |
-          PORT="${{ env.PRODUCTION_PORT }}"
-          FULL_HOSTNAME="${REPOSITORY_NAME}.${CLOUDFLARE_DOMAIN}"
-
-          echo "Adding Cloudflare tunnel route for: $FULL_HOSTNAME -> http://localhost:${PORT}"
-
-          # Get current tunnel configuration
-          CURRENT_CONFIG=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json")
-
-          # Check if we got a valid response
-          if ! echo "$CURRENT_CONFIG" | jq -e '.success == true' >/dev/null 2>&1; then
-            echo "✗ Failed to get current tunnel configuration"
-            echo "$CURRENT_CONFIG" | jq '.'
-            exit 1
-          fi
-
-          # Extract current ingress rules
-          CURRENT_INGRESS=$(echo "$CURRENT_CONFIG" | jq '.result.config.ingress // []')
-
-          # Remove any existing entry for this hostname (if redeploying)
-          CURRENT_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" '
-            map(select(.hostname != $hostname))
-          ')
-
-          # Add the new route before the catch-all rule
-          NEW_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" --arg service "http://localhost:${PORT}" '
-            # Remove catch-all if present
-            map(select(.service != "http_status:404")) +
-            # Add new route
-            [{
-              "hostname": $hostname,
-              "service": $service
-            }] +
-            # Add catch-all at the end
-            [{"service": "http_status:404"}]
-          ')
-
-          # Update tunnel configuration with new ingress rules
-          UPDATE_RESPONSE=$(curl -s -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data "{\"config\": {\"ingress\": $NEW_INGRESS}}")
-
-          if echo "$UPDATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
-            echo "✓ Successfully added tunnel route for $FULL_HOSTNAME"
-            echo "Current routes:"
-            echo "$NEW_INGRESS" | jq -r '.[] | select(.hostname) | "  - \(.hostname) -> \(.service)"'
-          else
-            echo "✗ Failed to update tunnel configuration"
-            echo "$UPDATE_RESPONSE" | jq '.'
-            exit 1
-          fi
+          TUNNEL_HOSTNAME: ${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}
+          TUNNEL_SERVICE: http://localhost:${{ steps.allocate-port.outputs.PORT }}
+        run: python3 .github/scripts/tunnel_route.py
 
       - name: Create Cloudflare DNS record
         env:

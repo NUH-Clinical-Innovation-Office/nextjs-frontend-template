@@ -57,8 +57,12 @@ spec:
         {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 12 }}
-        {{- if or .Values.bunOptions.smol .Values.metrics.enabled .Values.env }}
+        {{- if or .Values.bunOptions.smol .Values.metrics.enabled .Values.env .Values.vaultSecrets.file }}
         env:
+          {{- if .Values.vaultSecrets.file }}
+            - name: VAULT_SECRETS_FILE
+              value: {{ .Values.vaultSecrets.file | quote }}
+          {{- end }}
           {{- if .Values.bunOptions.smol }}
             - name: BUN_OPTIONS
               value: "--smol"

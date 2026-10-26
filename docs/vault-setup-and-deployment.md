@@ -67,7 +67,7 @@ This application uses HashiCorp Vault to securely store and manage secrets acros
 │  │                                                        │  │
 │  │  ┌──────────────────────────────────────────────────┐  │  │
 │  │  │  App Container: nextjs-app                       │  │  │
-│  │  │  /vault/secrets/env ← Injected secrets file      │  │  │
+│  │  │  /vault/secrets/env.json ← Injected secrets file │  │  │
 │  │  │  Application reads secrets from this file        │  │  │
 │  │  └──────────────────────────────────────────────────┘  │  │
 │  └────────────────────────────────────────────────────────┘  │
@@ -196,8 +196,8 @@ EOF
 
 # Create Kubernetes role
 vault write auth/kubernetes/role/nextjs-frontend-template \
-    bound_service_account_names=nextjs-frontend-template \
-    bound_service_account_namespaces=nextjs-frontend-template,nextjs-* \
+    bound_service_account_names=nextjs-frontend-template,nextjs-frontend-template-staging,nextjs-frontend-template-feature \
+    bound_service_account_namespaces=nextjs-frontend-template,nextjs-frontend-template-staging \
     policies=nextjs-frontend-template \
     ttl=24h
 ```
@@ -210,10 +210,10 @@ The easiest way to configure all environments is using the provided script:
 
 ```bash
 # Make the script executable
-chmod +x scripts/setup-vault-environments.sh
+chmod +x docs/scripts/setup-vault-environments.sh
 
 # Run the script
-./scripts/setup-vault-environments.sh
+./docs/scripts/setup-vault-environments.sh
 ```
 
 The script will prompt you for secrets for each environment:
@@ -295,8 +295,8 @@ When you deploy your application using Helm, the following happens automatically
    - Init container that fetches secrets
    - Shared volume for secrets
 4. **Secret Retrieval**: Init container authenticates to Vault and fetches secrets
-5. **Secret Writing**: Secrets are written to `/vault/secrets/env` as a shell script
-6. **Application Start**: Main container starts with access to secrets file
+5. **Secret Writing**: Secrets are written to `/vault/secrets/env.json` as JSON
+6. **Application Start**: `bun start.mjs` loads the secrets before importing the Next.js server
 
 ### Deployment Commands
 
@@ -373,70 +373,42 @@ Each environment's `values-*.yaml` file contains pod annotations that configure 
 ```yaml
 podAnnotations:
   # Enable Vault injection
-  vault.hashicorp.io/agent-inject: "true"
+  vault.hashicorp.com/agent-inject: "true"
 
   # Kubernetes role to use for authentication
-  vault.hashicorp.io/role: "nextjs-frontend-template"
+  vault.hashicorp.com/role: "nextjs-frontend-template"
 
   # Secret path in Vault
-  vault.hashicorp.io/agent-inject-secret-env: "secret/data/nextjs-frontend-template/production"
+  vault.hashicorp.com/agent-inject-secret-env.json: "secret/data/nextjs-frontend-template/production"
 
   # Template for how to render the secrets
-  vault.hashicorp.io/agent-inject-template-env: |
+  vault.hashicorp.com/agent-inject-template-env.json: |
     {{- with secret "secret/data/nextjs-frontend-template/production" -}}
-    export NEXTAUTH_URL="{{ .Data.data.NEXTAUTH_URL }}"
-    export NEXTAUTH_SECRET="{{ .Data.data.NEXTAUTH_SECRET }}"
-    export DATABASE_URL="{{ .Data.data.DATABASE_URL }}"
-    export API_URL="{{ .Data.data.API_URL }}"
+    {{ .Data.data | toJSON }}
     {{- end -}}
 ```
 
 ### Accessing Secrets in Your Application
 
-Secrets are injected as a file at `/vault/secrets/env`. You have several options:
+The chart sets `VAULT_SECRETS_FILE=/vault/secrets/env.json`. The Docker image
+runs `bun start.mjs`, which loads this JSON before importing `server.js`.
+This works with the shell-free DHI image. Explicit container environment values
+take precedence over Vault values.
 
-#### Option 1: Source the file in your entrypoint
+Store each environment value as a string. JSON preserves quotes, dollar signs,
+and newlines without executing shell expressions. A configured file that is
+missing, malformed, or contains non-string values stops startup. The entrypoint
+reports the failure without printing secret contents.
 
-```dockerfile
-# Dockerfile
-CMD ["sh", "-c", "source /vault/secrets/env && node server.js"]
-```
+When Vault is disabled, leave `vaultSecrets.file` empty. Restart the application
+pods after changing Vault values because the process reads the file at startup.
 
-#### Option 2: Read the file in your application
-
-```typescript
-// server.ts
-import { readFileSync } from 'fs';
-import { parse } from 'dotenv';
-
-// Read Vault secrets if file exists
-try {
-  const vaultSecrets = readFileSync('/vault/secrets/env', 'utf8');
-  const secrets = parse(vaultSecrets.replace(/export /g, ''));
-  Object.assign(process.env, secrets);
-} catch (error) {
-  console.log('No Vault secrets found, using environment variables');
-}
-
-// Now use secrets
-const nextAuthUrl = process.env.NEXTAUTH_URL;
-```
-
-#### Option 3: Use a startup script
-
-```bash
-#!/bin/sh
-# entrypoint.sh
-
-# Load Vault secrets if available
-if [ -f /vault/secrets/env ]; then
-  echo "Loading secrets from Vault..."
-  . /vault/secrets/env
-fi
-
-# Start application
-exec node server.js
-```
+Before enabling injection in an existing cluster, verify the Vault role permits
+the ServiceAccount names in each environment overlay and the deployed namespace
+names. Feature and staging accounts have different names from production.
+For dynamic preview namespaces, use an approved namespace label selector or
+maintain an explicit allowlist. A partial namespace pattern such as `nextjs-*`
+is not an allowlist of matching names.
 
 ### Verification
 
@@ -450,7 +422,7 @@ POD=$(kubectl get pods -n nextjs-frontend-template -l app=nextjs-app -o jsonpath
 kubectl exec -n nextjs-frontend-template $POD -c nextjs-app -- ls -la /vault/secrets/
 
 # View secrets (be careful in production!)
-kubectl exec -n nextjs-frontend-template $POD -c nextjs-app -- cat /vault/secrets/env
+kubectl exec -n nextjs-frontend-template $POD -c nextjs-app -- cat /vault/secrets/env.json
 
 # Check pod annotations
 kubectl get pod $POD -n nextjs-frontend-template -o jsonpath='{.metadata.annotations}' | jq
@@ -487,7 +459,7 @@ kubectl logs -n nextjs-frontend-template $POD -c vault-agent-init
 vault kv get secret/nextjs-frontend-template/production
 
 # Check secret path in pod annotation
-kubectl get pod $POD -o yaml | grep vault.hashicorp.io/agent-inject-secret
+kubectl get pod $POD -o yaml | grep vault.hashicorp.com/agent-inject-secret
 ```
 
 **Solution**: Ensure the path in pod annotations matches the actual Vault path.
@@ -525,7 +497,7 @@ Add this annotation to get more verbose logs:
 
 ```yaml
 podAnnotations:
-  vault.hashicorp.io/log-level: "debug"
+  vault.hashicorp.com/log-level: "debug"
 ```
 
 ### Check Vault Audit Logs

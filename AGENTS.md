@@ -31,7 +31,8 @@ in the production image.
   invokes `next`.
 - The Docker build uses `dhi.io/bun:1.4-debian-dev` for builds and
   `dhi.io/bun:1.4-debian` for the non-root runtime, which starts the standalone
-  build with `bun server.js`.
+  build with `bun start.mjs`. The entrypoint loads Vault JSON before importing
+  `server.js`.
 - DHI runtime images run as UID 65532 and do not include a shell or package
   manager. The Dockerfile therefore uses the DHI `-dev` variant for build steps
   and numeric ownership for copied artifacts.

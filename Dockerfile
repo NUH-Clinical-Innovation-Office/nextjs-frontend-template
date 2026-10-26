@@ -48,6 +48,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=builder --chown=65532:65532 /app/public ./public
 COPY --from=builder --chown=65532:65532 /app/.next/standalone ./
 COPY --from=builder --chown=65532:65532 /app/.next/static ./.next/static
+COPY --from=builder --chown=65532:65532 /app/start.mjs ./start.mjs
 
 # DHI runtime images run as the nonroot user (UID 65532) and intentionally do
 # not include a shell or package manager.
@@ -59,4 +60,4 @@ ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
 # Start the standalone server on the Bun runtime
-CMD ["bun", "server.js"]
+CMD ["bun", "start.mjs"]

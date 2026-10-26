@@ -3,12 +3,13 @@ name: Feature Branch Cleanup
 on:
   delete:
 
-env:
-  PORT_MAPPING_NAMESPACE: default
-
 jobs:
   cleanup:
     name: Cleanup Feature Branch Deployment
+    if: github.event.ref_type == 'branch' && github.event.ref != 'main'
+    concurrency:
+      group: preview-${{ github.repository }}-${{ github.event.ref }}
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -65,28 +66,26 @@ jobs:
           kubectl config set-context prod --cluster=prod --user=deployer
           kubectl config use-context prod
 
-      - name: Determine branch name
+      - name: Determine preview identity
         id: branch-name
         env:
-          DELETED_REF: ${{ github.event.ref }}
-        run: |
-          SANITIZED_BRANCH=$(echo "$DELETED_REF" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
-          echo "SANITIZED=$SANITIZED_BRANCH" >> "$GITHUB_OUTPUT"
+          PREVIEW_BRANCH: ${{ github.event.ref }}
+        run: python3 .github/scripts/preview_identity.py
 
       - name: Delete Helm release
         run: |
-          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
+          NAMESPACE="${{ steps.branch-name.outputs.NAMESPACE }}"
 
-          if helm list -n "$NAMESPACE" | grep -q "nextjs-app-${{ steps.branch-name.outputs.SANITIZED }}"; then
+          if helm list -n "$NAMESPACE" | grep -q "${{ steps.branch-name.outputs.RELEASE }}"; then
             echo "Deleting Helm release..."
-            helm uninstall nextjs-app-${{ steps.branch-name.outputs.SANITIZED }} -n "$NAMESPACE" || true
+            helm uninstall ${{ steps.branch-name.outputs.RELEASE }} -n "$NAMESPACE" || true
           else
             echo "No Helm release found, skipping..."
           fi
 
       - name: Delete namespace
         run: |
-          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
+          NAMESPACE="${{ steps.branch-name.outputs.NAMESPACE }}"
 
           if kubectl get namespace "$NAMESPACE" 2>/dev/null; then
             echo "Deleting namespace $NAMESPACE..."
@@ -95,73 +94,25 @@ jobs:
             echo "Namespace not found, skipping..."
           fi
 
-      - name: Remove port mapping
-        run: |
-          kubectl patch configmap feature-branch-port-mappings -n ${{ env.PORT_MAPPING_NAMESPACE }} \
-            --type json \
-            -p "[{\"op\": \"remove\", \"path\": \"/data/${{ steps.branch-name.outputs.SANITIZED }}\"}]" || echo "Port mapping not found or already removed"
-
       - name: Remove Cloudflare Tunnel route
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
-          CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
+          TUNNEL_HOSTNAME: ${{ steps.branch-name.outputs.HOST_LABEL }}.${{ vars.CLOUDFLARE_DOMAIN }}
         run: |
-          SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
-          FULL_HOSTNAME="${SUBDOMAIN}-dev-${{ github.event.repository.name }}.${CLOUDFLARE_DOMAIN}"
-
-          echo "Attempting to remove Cloudflare tunnel route for: $FULL_HOSTNAME"
-
-          # Get current tunnel configuration
-          CURRENT_CONFIG=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json")
-
-          # Check if we got a valid response
-          if echo "$CURRENT_CONFIG" | jq -e '.success == true' >/dev/null 2>&1; then
-            # Extract current ingress rules and remove the matching hostname
-            NEW_INGRESS=$(echo "$CURRENT_CONFIG" | jq --arg hostname "$FULL_HOSTNAME" '
-              .result.config.ingress |
-              map(select(.hostname != $hostname))
-            ')
-
-            # Ensure we always have the catch-all rule at the end
-            HAS_CATCHALL=$(echo "$NEW_INGRESS" | jq 'any(.service == "http_status:404")')
-            if [ "$HAS_CATCHALL" != "true" ]; then
-              NEW_INGRESS=$(echo "$NEW_INGRESS" | jq '. + [{"service": "http_status:404"}]')
-            fi
-
-            # Update tunnel configuration with cleaned ingress rules
-            UPDATE_RESPONSE=$(curl -s -X PUT \
-              "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-              -H "Content-Type: application/json" \
-              --data "{\"config\": {\"ingress\": $NEW_INGRESS}}")
-
-            if echo "$UPDATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
-              echo "✓ Successfully removed tunnel route for $FULL_HOSTNAME"
-            else
-              echo "✗ Failed to update tunnel configuration"
-              echo "$UPDATE_RESPONSE" | jq '.'
-              echo "⚠ WARNING: Cloudflare route cleanup failed. Manual cleanup may be required."
-              echo "⚠ Orphaned route: $FULL_HOSTNAME"
-            fi
-          else
-            echo "✗ Failed to get current tunnel configuration"
-            echo "$CURRENT_CONFIG" | jq '.'
-            echo "⚠ WARNING: Cloudflare route cleanup failed. Manual cleanup may be required."
-            echo "⚠ Orphaned route: $FULL_HOSTNAME"
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ] || [ -z "$CLOUDFLARE_TUNNEL_ID" ]; then
+            echo "Cloudflare credentials are incomplete. Skipping tunnel cleanup."
+            exit 0
           fi
+          python3 .github/scripts/tunnel_route.py
 
       - name: Remove Cloudflare DNS record
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
         run: |
-          SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
-          FULL_HOSTNAME="${SUBDOMAIN}-dev-${{ github.event.repository.name }}.${CLOUDFLARE_DOMAIN}"
+          FULL_HOSTNAME="${{ steps.branch-name.outputs.HOST_LABEL }}.${CLOUDFLARE_DOMAIN}"
 
           echo "Attempting to remove Cloudflare DNS record for: $FULL_HOSTNAME"
 
@@ -206,7 +157,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const branchName = "${{ github.event.ref }}";
+            const branchName = context.payload.ref;
             const environmentName = branchName;
 
             try {
@@ -238,7 +189,7 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const branchName = "${{ github.event.ref }}";
+            const branchName = context.payload.ref;
             const environmentName = branchName;
 
             try {

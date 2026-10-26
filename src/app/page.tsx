@@ -32,7 +32,7 @@ export default function Home() {
           <NavigationShowcase />
           <FormsShowcase />
           <OverlaysShowcase />
-          <FeedbackShowcase />
+          <FeedbackShowcase initialDate={new Date().toISOString()} />
         </main>
         <Footer />
       </div>

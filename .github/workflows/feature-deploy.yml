@@ -16,15 +16,18 @@ jobs:
   deploy:
     name: Deploy Feature Branch
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    concurrency:
+      group: preview-${{ github.repository }}-${{ github.ref_name }}
+      cancel-in-progress: false
     permissions:
       contents: read
       packages: read
       deployments: write
     outputs:
-      branch_name: ${{ steps.branch-name.outputs.SANITIZED }}
+      branch_name: ${{ github.ref_name }}
       node_port: ${{ steps.allocate-port.outputs.PORT }}
-      deployment_url: https://${{ steps.branch-name.outputs.SANITIZED }}-dev-${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}
+      deployment_url: https://${{ steps.branch-name.outputs.HOST_LABEL }}.${{ vars.CLOUDFLARE_DOMAIN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -82,16 +85,15 @@ jobs:
           kubectl config set-context prod --cluster=prod --user=deployer
           kubectl config use-context prod
 
-      - name: Sanitize branch name
+      - name: Determine preview identity
         id: branch-name
-        run: |
-          BRANCH_NAME="${{ github.ref_name }}"
-          SANITIZED_BRANCH=$(echo "$BRANCH_NAME" | sed 's/\//-/g' | tr '[:upper:]' '[:lower:]')
-          echo "SANITIZED=$SANITIZED_BRANCH" >> "$GITHUB_OUTPUT"
+        env:
+          PREVIEW_BRANCH: ${{ github.ref_name }}
+        run: python3 .github/scripts/preview_identity.py
 
       - name: Copy GHCR secret to feature namespace
         run: |
-          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
+          NAMESPACE="${{ steps.branch-name.outputs.NAMESPACE }}"
 
           # Create namespace only if it doesn't exist (avoids patching pre-existing ns)
           kubectl get namespace "$NAMESPACE" &>/dev/null || \
@@ -110,9 +112,9 @@ jobs:
       - name: Deploy with Helm
         run: |
           IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
+          NAMESPACE="${{ steps.branch-name.outputs.NAMESPACE }}"
 
-          helm upgrade --install nextjs-app-${{ steps.branch-name.outputs.SANITIZED }} ./helm/nextjs-app \
+          helm upgrade --install ${{ steps.branch-name.outputs.RELEASE }} ./helm/nextjs-app \
             -n "$NAMESPACE" \
             --create-namespace \
             -f ./helm/nextjs-app/values-feature.yaml \
@@ -125,9 +127,10 @@ jobs:
       - name: Read allocated feature port
         id: allocate-port
         env:
-          BRANCH: ${{ steps.branch-name.outputs.SANITIZED }}
+          PREVIEW_NAMESPACE: ${{ steps.branch-name.outputs.NAMESPACE }}
+          PREVIEW_RELEASE: ${{ steps.branch-name.outputs.RELEASE }}
         run: |
-          PORT=$(kubectl get service "nextjs-app-${BRANCH}" -n "nextjs-${BRANCH}" \
+          PORT=$(kubectl get service "${PREVIEW_RELEASE}" -n "${PREVIEW_NAMESPACE}" \
             -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
           if ! [[ "$PORT" =~ ^[0-9]+$ ]] || [ "$PORT" -eq 0 ]; then
             echo "::error::The feature Service has no allocated NodePort"
@@ -137,72 +140,17 @@ jobs:
 
       - name: Verify deployment
         run: |
-          NAMESPACE="nextjs-${{ steps.branch-name.outputs.SANITIZED }}"
-          kubectl rollout status deployment/nextjs-app-${{ steps.branch-name.outputs.SANITIZED }} -n "$NAMESPACE" --timeout=1m
+          NAMESPACE="${{ steps.branch-name.outputs.NAMESPACE }}"
+          kubectl rollout status deployment/${{ steps.branch-name.outputs.RELEASE }} -n "$NAMESPACE" --timeout=1m
 
       - name: Create Cloudflare Tunnel route
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
-          CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
-        run: |
-          SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
-          PORT="${{ steps.allocate-port.outputs.PORT }}"
-          FULL_HOSTNAME="${SUBDOMAIN}-dev-${{ github.event.repository.name }}.${CLOUDFLARE_DOMAIN}"
-
-          echo "Adding Cloudflare tunnel route for: $FULL_HOSTNAME -> http://localhost:${PORT}"
-
-          # Get current tunnel configuration
-          CURRENT_CONFIG=$(curl -s -X GET \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json")
-
-          # Check if we got a valid response
-          if ! echo "$CURRENT_CONFIG" | jq -e '.success == true' >/dev/null 2>&1; then
-            echo "✗ Failed to get current tunnel configuration"
-            echo "$CURRENT_CONFIG" | jq '.'
-            exit 1
-          fi
-
-          # Extract current ingress rules
-          CURRENT_INGRESS=$(echo "$CURRENT_CONFIG" | jq '.result.config.ingress // []')
-
-          # Remove any existing entry for this hostname (if redeploying)
-          CURRENT_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" '
-            map(select(.hostname != $hostname))
-          ')
-
-          # Add the new route before the catch-all rule
-          NEW_INGRESS=$(echo "$CURRENT_INGRESS" | jq --arg hostname "$FULL_HOSTNAME" --arg service "http://localhost:${PORT}" '
-            # Remove catch-all if present
-            map(select(.service != "http_status:404")) +
-            # Add new route
-            [{
-              "hostname": $hostname,
-              "service": $service
-            }] +
-            # Add catch-all at the end
-            [{"service": "http_status:404"}]
-          ')
-
-          # Update tunnel configuration with new ingress rules
-          UPDATE_RESPONSE=$(curl -s -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/cfd_tunnel/$CLOUDFLARE_TUNNEL_ID/configurations" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data "{\"config\": {\"ingress\": $NEW_INGRESS}}")
-
-          if echo "$UPDATE_RESPONSE" | jq -e '.success == true' >/dev/null 2>&1; then
-            echo "✓ Successfully added tunnel route for $FULL_HOSTNAME"
-            echo "Current routes:"
-            echo "$NEW_INGRESS" | jq -r '.[] | select(.hostname) | "  - \(.hostname) -> \(.service)"'
-          else
-            echo "✗ Failed to update tunnel configuration"
-            echo "$UPDATE_RESPONSE" | jq '.'
-            exit 1
-          fi
+          TUNNEL_HOSTNAME: ${{ steps.branch-name.outputs.HOST_LABEL }}.${{ vars.CLOUDFLARE_DOMAIN }}
+          TUNNEL_SERVICE: http://localhost:${{ steps.allocate-port.outputs.PORT }}
+        run: python3 .github/scripts/tunnel_route.py
 
       - name: Create Cloudflare DNS record
         env:
@@ -210,8 +158,7 @@ jobs:
           CLOUDFLARE_TUNNEL_ID: ${{ secrets.CLOUDFLARE_TUNNEL_ID }}
           CLOUDFLARE_DOMAIN: ${{ vars.CLOUDFLARE_DOMAIN }}
         run: |
-          SUBDOMAIN="${{ steps.branch-name.outputs.SANITIZED }}"
-          FULL_HOSTNAME="${SUBDOMAIN}-dev-${{ github.event.repository.name }}.${CLOUDFLARE_DOMAIN}"
+          FULL_HOSTNAME="${{ steps.branch-name.outputs.HOST_LABEL }}.${CLOUDFLARE_DOMAIN}"
 
           echo "Creating DNS CNAME record for: $FULL_HOSTNAME"
 
@@ -286,7 +233,7 @@ jobs:
       - name: Create GitHub deployment
         uses: actions/github-script@v9
         env:
-          DEPLOYMENT_URL: https://${{ steps.branch-name.outputs.SANITIZED }}-dev-${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}
+          DEPLOYMENT_URL: https://${{ steps.branch-name.outputs.HOST_LABEL }}.${{ vars.CLOUDFLARE_DOMAIN }}
         with:
           script: |
             const deploymentUrl = process.env.DEPLOYMENT_URL;

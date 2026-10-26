@@ -34,7 +34,7 @@ fi
 # Function to create secrets for an environment
 create_environment_secrets() {
     local ENV=$1
-    local PATH="secret/data/nextjs-frontend-template/${ENV}"
+    local SECRET_PATH="secret/nextjs-frontend-template/${ENV}"
 
     echo -e "\n${YELLOW}Creating secrets for ${ENV} environment...${NC}"
 
@@ -56,7 +56,7 @@ create_environment_secrets() {
     read API_URL
 
     # Create secret in Vault
-    vault kv put "${PATH}" \
+    vault kv put "${SECRET_PATH}" \
         NEXTAUTH_URL="${NEXTAUTH_URL}" \
         NEXTAUTH_SECRET="${NEXTAUTH_SECRET}" \
         DATABASE_URL="${DATABASE_URL}" \

@@ -24,16 +24,16 @@ serviceAccount:
   name: "nextjs-frontend-template-feature"
 
 podAnnotations:
-  vault.hashicorp.io/agent-inject: "true"
-  vault.hashicorp.io/role: "nextjs-frontend-template"
-  vault.hashicorp.io/agent-inject-secret-env: "secret/data/nextjs-frontend-template/development"
-  vault.hashicorp.io/agent-inject-template-env: |
+  vault.hashicorp.com/agent-inject: "true"
+  vault.hashicorp.com/role: "nextjs-frontend-template"
+  vault.hashicorp.com/agent-inject-secret-env.json: "secret/data/nextjs-frontend-template/development"
+  vault.hashicorp.com/agent-inject-template-env.json: |
     {{- with secret "secret/data/nextjs-frontend-template/development" -}}
-    export NEXTAUTH_URL="{{ .Data.data.NEXTAUTH_URL }}"
-    export NEXTAUTH_SECRET="{{ .Data.data.NEXTAUTH_SECRET }}"
-    export DATABASE_URL="{{ .Data.data.DATABASE_URL }}"
-    export API_URL="{{ .Data.data.API_URL }}"
+    {{ .Data.data | toJSON }}
     {{- end -}}
+
+vaultSecrets:
+  file: /vault/secrets/env.json
 
 env:
   - name: NODE_ENV

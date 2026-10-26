@@ -59,7 +59,7 @@ jobs:
 
   deploy-feature:
     name: Deploy Feature Branch
-    if: github.ref != 'refs/heads/main'
+    if: startsWith(github.ref, 'refs/heads/') && github.ref != 'refs/heads/main'
     needs: [docker, security-scan]
     permissions:
       contents: read
