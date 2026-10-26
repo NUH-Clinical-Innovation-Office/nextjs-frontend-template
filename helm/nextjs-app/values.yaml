@@ -124,6 +124,9 @@ tolerations: []
 affinity: {}
 
 # Environment variables
+vaultSecrets:
+  file: ""  # Set only after configuring Vault injection
+
 env: []
   # - name: API_URL
   #   value: "https://api.example.com"

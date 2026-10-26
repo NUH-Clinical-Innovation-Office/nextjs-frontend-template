@@ -80,7 +80,7 @@ HashiCorp Vault Agent Injector is configured in the Helm charts to inject secret
 
 ### How It Works
 
-Pod annotations in the Helm values files trigger Vault Agent Injector to render a file at `/vault/secrets/env` containing exported environment variables. The injected secrets are:
+Pod annotations in the Helm values files trigger Vault Agent Injector to render a JSON file at `/vault/secrets/env.json`. The Bun entrypoint loads it before Next.js starts. The template includes all string values in the Vault secret. The injected secrets are:
 
 - `NEXTAUTH_URL` — NextAuth.js callback URL
 - `NEXTAUTH_SECRET` — NextAuth.js signing/encryption key
@@ -100,7 +100,7 @@ Pod annotations in the Helm values files trigger Vault Agent Injector to render 
 To inject additional secrets:
 
 1. Add the key-value pair to the corresponding Vault path (e.g., via `vault kv patch`)
-2. Add an `export` line to the `vault.hashicorp.io/agent-inject-template-env` annotation in the relevant Helm values file (`values-feature.yaml`, `values-staging.yaml`, or `values-production.yaml`)
+2. Store environment values as strings. The JSON template includes new keys automatically.
 3. Add the variable to the Zod schema in `src/lib/env.ts` (or uncomment an existing commented-out entry)
 
 ## Adding Backend Integration

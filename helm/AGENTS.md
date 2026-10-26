@@ -50,7 +50,6 @@ When adding a knob, add it to `values.yaml` first, then override as needed.
 | `service.nodePort` | allocated per branch | 30002 | 30001 |
 | `autoscaling` | off | off | on (1–2, CPU 60%) |
 | `podDisruptionBudget` | off | `maxUnavailable: 1` | `minAvailable: 1` |
-| Vault path | `.../development` | `.../staging` | `.../production` |
 
 Feature branches set `featureBranch.enabled: true` and `service.nodePort: 0`.
 The template omits `nodePort`, allowing Kubernetes to allocate an available
@@ -69,10 +68,13 @@ keeps the GC aggressive under the 256Mi limit every environment ships. Bun runs
 JavaScriptCore, so V8 flags like `NODE_OPTIONS=--max-old-space-size` are inert.
 Adding them has no effect.
 
-**Secrets come from Vault**, injected by the Vault Agent sidecar via
-`podAnnotations` (`vault.hashicorp.io/agent-inject-*`). Each environment reads
-its own KV path. Keep secret material out of `env:`, because those values land
-in the rendered manifest in plain text. See `docs/vault-setup-and-deployment.md`.
+**Vault is optional and disabled by default.** To enable it, configure the Agent
+Injector annotations in `podAnnotations` and set `vaultSecrets.file` to the injected
+JSON file. A configured file that is missing or invalid stops startup. See
+`docs/vault-setup-and-deployment.md` for provisioning and configuration.
+Use `envFrom` with a Kubernetes Secret for secrets supplied without Vault.
+Keep secret material out of `env:`, because those values land in the rendered
+manifest in plain text.
 
 **ServiceMonitor is opt-in.** `metrics.serviceMonitor.enabled` requires the
 Prometheus Operator CRDs (`monitoring.coreos.com/v1`) in the target cluster.

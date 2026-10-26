@@ -62,6 +62,9 @@ jobs:
       - name: Run lint
         run: bun run lint
 
+      - name: Test deployment helpers
+        run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+
   test:
     name: Test
     runs-on: ubuntu-latest

@@ -20,22 +20,10 @@ service:
 
 serviceAccount:
   create: true
-  annotations:
-    # Required for Vault integration
+  annotations: {}
   name: "nextjs-frontend-template"
 
-# Vault Agent Injector annotations
-podAnnotations:
-  vault.hashicorp.io/agent-inject: "true"
-  vault.hashicorp.io/role: "nextjs-frontend-template"
-  vault.hashicorp.io/agent-inject-secret-env: "secret/data/nextjs-frontend-template/production"
-  vault.hashicorp.io/agent-inject-template-env: |
-    {{- with secret "secret/data/nextjs-frontend-template/production" -}}
-    export NEXTAUTH_URL="{{ .Data.data.NEXTAUTH_URL }}"
-    export NEXTAUTH_SECRET="{{ .Data.data.NEXTAUTH_SECRET }}"
-    export DATABASE_URL="{{ .Data.data.DATABASE_URL }}"
-    export API_URL="{{ .Data.data.API_URL }}"
-    {{- end -}}
+podAnnotations: {}
 
 env:
   - name: NODE_ENV

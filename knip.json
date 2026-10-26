@@ -8,5 +8,5 @@
   "ignoreDependencies": ["@commitlint/types"],
   "ignoreBinaries": ["trivy"],
   "ignore": ["src/components/ui/**"],
-  "entry": ["src/lib/env.ts!"]
+  "entry": ["src/lib/env.ts!", "start.mjs!"]
 }

@@ -20,8 +20,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-export function FeedbackShowcase() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+export function FeedbackShowcase({ initialDate }: { initialDate: string }) {
+  const [date, setDate] = useState<Date | undefined>(() => new Date(initialDate));
   const [progress, setProgress] = useState(45);
 
   return (
@@ -126,12 +126,17 @@ export function FeedbackShowcase() {
           <SectionLabel>Calendar</SectionLabel>
           <Calendar
             mode="single"
+            timeZone="Asia/Singapore"
+            today={new Date(initialDate)}
+            defaultMonth={new Date(initialDate)}
             selected={date}
             onSelect={setDate}
             className="rounded-xl border"
           />
           {date && (
-            <p className="text-sm text-muted-foreground">Selected: {date.toLocaleDateString()}</p>
+            <p className="text-sm text-muted-foreground">
+              Selected: {date.toLocaleDateString('en-SG', { timeZone: 'Asia/Singapore' })}
+            </p>
           )}
         </div>
         <div className="flex flex-col gap-2">

@@ -19,6 +19,7 @@ jobs:
       url: https://${{ github.event.repository.name }}.${{ vars.CLOUDFLARE_DOMAIN }}
     permissions:
       contents: read
+      deployments: read
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
