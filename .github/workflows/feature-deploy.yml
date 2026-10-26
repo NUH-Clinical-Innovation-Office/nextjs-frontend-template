@@ -110,6 +110,7 @@ jobs:
           fi
 
       - name: Deploy with Helm
+        id: helm-deploy
         run: |
           IMAGE_NAME_LOWER=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           NAMESPACE="${{ steps.branch-name.outputs.NAMESPACE }}"
@@ -123,6 +124,14 @@ jobs:
             --set service.nodePort=0 \
             --wait \
             --timeout 10m
+
+      - name: Show failed deployment status
+        if: ${{ failure() && steps.helm-deploy.outcome == 'failure' }}
+        env:
+          PREVIEW_NAMESPACE: ${{ steps.branch-name.outputs.NAMESPACE }}
+        run: |
+          kubectl get pods,deployments,services -n "$PREVIEW_NAMESPACE" --request-timeout=15s || true
+          kubectl get events -n "$PREVIEW_NAMESPACE" --sort-by=.lastTimestamp --request-timeout=15s || true
 
       - name: Read allocated feature port
         id: allocate-port

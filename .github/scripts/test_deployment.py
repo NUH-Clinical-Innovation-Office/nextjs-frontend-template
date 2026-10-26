@@ -35,6 +35,18 @@ class PreviewIdentityTest(unittest.TestCase):
 
 
 class VaultSetupTest(unittest.TestCase):
+    def test_default_environments_start_without_vault(self):
+        for environment in ("feature", "staging", "production"):
+            with self.subTest(environment=environment):
+                result = subprocess.run(
+                    ["helm", "template", "test", str(ROOT / "helm/nextjs-app"),
+                     "-f", str(ROOT / f"helm/nextjs-app/values-{environment}.yaml"),
+                     "--set", "image.tag=main-" + "a" * 40],
+                    text=True, capture_output=True, check=True,
+                )
+                self.assertNotIn("VAULT_SECRETS_FILE", result.stdout)
+                self.assertNotIn("vault.hashicorp.com/", result.stdout)
+
     def test_setup_can_generate_and_write_secrets_to_expected_logical_paths(self):
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)

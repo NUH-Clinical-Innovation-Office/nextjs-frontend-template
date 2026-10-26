@@ -20,22 +20,10 @@ service:
 
 serviceAccount:
   create: true
-  annotations:
-    # Required for Vault integration
+  annotations: {}
   name: "nextjs-frontend-template"
 
-# Vault Agent Injector annotations
-podAnnotations:
-  vault.hashicorp.com/agent-inject: "true"
-  vault.hashicorp.com/role: "nextjs-frontend-template"
-  vault.hashicorp.com/agent-inject-secret-env.json: "secret/data/nextjs-frontend-template/staging"
-  vault.hashicorp.com/agent-inject-template-env.json: |
-    {{- with secret "secret/data/nextjs-frontend-template/staging" -}}
-    {{ .Data.data | toJSON }}
-    {{- end -}}
-
-vaultSecrets:
-  file: /vault/secrets/env.json
+podAnnotations: {}
 
 env:
   - name: NODE_ENV

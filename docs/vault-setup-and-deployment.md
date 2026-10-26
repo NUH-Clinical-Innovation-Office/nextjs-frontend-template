@@ -2,6 +2,10 @@
 
 This guide explains how to set up HashiCorp Vault for managing secrets across different environments (feature, staging, and production) and how your application automatically retrieves secrets during deployment.
 
+Vault is optional. The supplied environment values leave it disabled, and the
+current cluster does not run Vault or its injector. Follow this guide only when
+you choose to provision Vault. The application starts without a Vault file by default.
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -287,7 +291,7 @@ vault kv put secret/nextjs-frontend-template/production \
 
 ### How It Works
 
-When you deploy your application using Helm, the following happens automatically:
+After provisioning Vault and enabling injection in your values, deployment works as follows:
 
 1. **Helm Deployment**: Helm chart is deployed with environment-specific values file
 2. **Pod Creation**: Kubernetes creates a pod with Vault annotations
@@ -368,9 +372,14 @@ The deployment uses:
 
 ### Vault Agent Injector Annotations
 
-Each environment's `values-*.yaml` file contains pod annotations that configure Vault injection:
+After provisioning Vault, add the following to a separate values file and pass it
+to Helm after the environment values with `-f`. Use the matching secret path for
+each environment. Leave this file out of deployments that do not use Vault.
 
 ```yaml
+vaultSecrets:
+  file: /vault/secrets/env.json
+
 podAnnotations:
   # Enable Vault injection
   vault.hashicorp.com/agent-inject: "true"
@@ -390,7 +399,7 @@ podAnnotations:
 
 ### Accessing Secrets in Your Application
 
-The chart sets `VAULT_SECRETS_FILE=/vault/secrets/env.json`. The Docker image
+Setting `vaultSecrets.file` makes the chart set `VAULT_SECRETS_FILE`. The Docker image
 runs `bun start.mjs`, which loads this JSON before importing `server.js`.
 This works with the shell-free DHI image. Explicit container environment values
 take precedence over Vault values.
