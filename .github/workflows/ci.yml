@@ -15,7 +15,7 @@ jobs:
       bun_version: ${{ steps.get-bun-version.outputs.bun_version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Get Bun version from package.json
         id: get-bun-version
